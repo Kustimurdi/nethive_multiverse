@@ -1,0 +1,216 @@
+"""
+    MultiTaskBee
+
+Represents a bee (neural network) that can work on multiple classification tasks.
+
+# Fields
+## Core Identity
+- `id::Int`: Unique identifier for this bee
+- `brain::Flux.Chain`: Neural network model (universal architecture)
+
+## Multi-task Performance State
+- `queen_genes::Vector{Float64}`: Performance on each task (accuracy-based, in [0,1])
+- `current_task::Union{Int,Nothing}`: Currently assigned task (1-indexed) or nothing
+- `specialization_weights::Vector{Float64}`: Task preference weights (normalized)
+- `train_counts::Vector{Int}`: Number of training episodes per task
+
+## Interaction State (for suppression/interactions)
+- `suppressed_tasks::Vector{Bool}`: Which tasks are currently suppressed
+- `suppression_start_times::Vector{Float64}`: When suppression started for each task
+
+Note: All vectors have length = n_tasks from the associated MultiTaskHiveConfig.
+"""
+mutable struct MultiTaskBee
+    # Core identity
+    id::Int
+    brain::Flux.Chain
+    
+    # Multi-task performance state
+    queen_genes::Vector{Float64}          # Performance per task [0,1]
+    current_task::Union{Int,Nothing}      # Current task assignment
+    specialization_weights::Vector{Float64}  # Task preferences (normalized)
+    train_counts::Vector{Int}             # Training episodes per task
+    
+    # Interaction state
+    suppressed_tasks::Vector{Bool}        # Suppression status per task
+    suppression_start_times::Vector{Float64}  # Suppression timing per task
+    
+    function MultiTaskBee(id::Int, 
+                         brain::Flux.Chain, 
+                         n_tasks::Int;
+                         initial_queen_genes::Union{Vector{Float64}, Nothing}=nothing,
+                         initial_specialization::Union{Vector{Float64}, Nothing}=nothing,
+                         initial_task::Union{Int, Nothing}=nothing)
+        
+        # Validate inputs
+        if n_tasks <= 0
+            throw(ArgumentError("Number of tasks must be positive"))
+        end
+        if initial_task !== nothing && (initial_task < 1 || initial_task > n_tasks)
+            throw(ArgumentError("Initial task must be between 1 and $n_tasks"))
+        end
+        
+        # Initialize queen genes (performance per task)
+        if initial_queen_genes === nothing
+            queen_genes = zeros(Float64, n_tasks)
+        else
+            if length(initial_queen_genes) != n_tasks
+                throw(ArgumentError("initial_queen_genes must have length $n_tasks"))
+            end
+            # Clamp to [0,1] range
+            queen_genes = clamp.(initial_queen_genes, 0.0, 1.0)
+        end
+        
+        # Initialize specialization weights (uniform by default)
+        if initial_specialization === nothing
+            specialization_weights = fill(1.0 / n_tasks, n_tasks)  # Uniform
+        else
+            if length(initial_specialization) != n_tasks
+                throw(ArgumentError("initial_specialization must have length $n_tasks"))
+            end
+            # Normalize to sum to 1
+            total = sum(initial_specialization)
+            if total <= 0
+                specialization_weights = fill(1.0 / n_tasks, n_tasks)
+            else
+                specialization_weights = initial_specialization ./ total
+            end
+        end
+        
+        return new(id,
+                  brain,
+                  queen_genes,
+                  initial_task,
+                  specialization_weights,
+                  zeros(Int, n_tasks),           # train_counts
+                  fill(false, n_tasks),         # suppressed_tasks
+                  zeros(Float64, n_tasks))      # suppression_start_times
+    end
+end
+
+"""
+    create_bee(id::Int, config::MultiTaskHiveConfig; kwargs...)
+
+Create a MultiTaskBee using the model template from a MultiTaskHiveConfig.
+
+# Arguments
+- `id::Int`: Unique identifier for the bee
+- `config::MultiTaskHiveConfig`: Configuration containing model template and n_tasks
+- Optional keyword arguments passed to MultiTaskBee constructor
+
+# Returns
+- `MultiTaskBee`: Freshly created bee with new neural network
+
+# Example
+```julia
+config = create_multitask_hive_config([:mnist, :fashion_mnist], loaders, task_info, model_template)
+bee = create_bee(1, config)
+```
+"""
+function create_bee(id::Int, config::MultiTaskHiveConfig; kwargs...)
+    # Create fresh neural network using model template
+    brain = config.model_template()
+    n_tasks = length(config.dataset_names)
+    
+    return MultiTaskBee(id, brain, n_tasks; kwargs...)
+end
+
+"""
+    get_task_id(bee::MultiTaskBee, config::MultiTaskHiveConfig, dataset_name::Symbol)
+
+Get the task ID (1-indexed) for a given dataset name.
+
+# Returns
+- `Int`: Task ID for the dataset
+"""
+function get_task_id(bee::MultiTaskBee, config::MultiTaskHiveConfig, dataset_name::Symbol)
+    if !haskey(config.task_mapping, dataset_name)
+        throw(ArgumentError("Unknown dataset: $dataset_name"))
+    end
+    return config.task_mapping[dataset_name]
+end
+
+"""
+    get_task_id(config::MultiTaskHiveConfig, dataset_name::Symbol)
+
+Get the task ID (1-indexed) for a given dataset name from config.
+
+# Returns
+- `Int`: Task ID for the dataset
+"""
+function get_task_id(config::MultiTaskHiveConfig, dataset_name::Symbol)
+    if !haskey(config.task_mapping, dataset_name)
+        throw(ArgumentError("Unknown dataset: $dataset_name"))
+    end
+    return config.task_mapping[dataset_name]
+end
+
+"""
+    assign_task!(bee::MultiTaskBee, task_id::Union{Int, Nothing})
+
+Assign a specific task to a bee.
+
+# Arguments
+- `bee::MultiTaskBee`: Bee to assign task to
+- `task_id::Union{Int, Nothing}`: Task ID (1-indexed) or nothing to unassign
+"""
+function assign_task!(bee::MultiTaskBee, task_id::Union{Int, Nothing})
+    if task_id !== nothing
+        n_tasks = length(bee.queen_genes)
+        if task_id < 1 || task_id > n_tasks
+            throw(ArgumentError("Task ID must be between 1 and $n_tasks"))
+        end
+    end
+    bee.current_task = task_id
+end
+
+"""
+    is_task_suppressed(bee::MultiTaskBee, task_id::Int)
+
+Check if a specific task is currently suppressed for this bee.
+
+# Returns
+- `Bool`: True if task is suppressed
+"""
+function is_task_suppressed(bee::MultiTaskBee, task_id::Int)
+    if task_id < 1 || task_id > length(bee.suppressed_tasks)
+        throw(ArgumentError("Invalid task ID: $task_id"))
+    end
+    return bee.suppressed_tasks[task_id]
+end
+
+"""
+    suppress_task!(bee::MultiTaskBee, task_id::Int, current_time::Float64)
+
+Suppress a specific task for this bee.
+
+# Arguments
+- `bee::MultiTaskBee`: Bee to suppress task for
+- `task_id::Int`: Task ID to suppress (1-indexed)
+- `current_time::Float64`: Current simulation time
+"""
+function suppress_task!(bee::MultiTaskBee, task_id::Int, current_time::Float64)
+    if task_id < 1 || task_id > length(bee.suppressed_tasks)
+        throw(ArgumentError("Invalid task ID: $task_id"))
+    end
+    bee.suppressed_tasks[task_id] = true
+    bee.suppression_start_times[task_id] = current_time
+end
+
+"""
+    resolve_suppression!(bee::MultiTaskBee, task_id::Int)
+
+Resolve suppression for a specific task.
+
+# Arguments
+- `bee::MultiTaskBee`: Bee to resolve suppression for
+- `task_id::Int`: Task ID to resolve (1-indexed)
+"""
+function resolve_suppression!(bee::MultiTaskBee, task_id::Int)
+    if task_id < 1 || task_id > length(bee.suppressed_tasks)
+        throw(ArgumentError("Invalid task ID: $task_id"))
+    end
+    bee.suppressed_tasks[task_id] = false
+    bee.suppression_start_times[task_id] = 0.0
+end
+

@@ -178,6 +178,12 @@ function create_universal_model_template(input_dim::Int, output_dim::Int)
     return model_template
 end
 
+
+
+
+# ab hier prob nicht nötig
+
+
 """
     test_dataset_loading(dataset_names::Vector{Symbol}=[:mnist, :fashion_mnist])
 

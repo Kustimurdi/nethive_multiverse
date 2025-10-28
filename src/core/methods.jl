@@ -227,6 +227,10 @@ function run_gillespie!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::
 
         performance_history[1+epoch, :, :] .= hive.queen_genes
         loss_history[1+epoch, :, :] .= hive.losses
+
+        if (hive.config.save_nn_epochs) > 0 && (epoch % hive.config.save_nn_epochs == 0)
+            #save the neural networks 
+        end
         
         if verbose 
             println("Time: $(round(hive.current_time, digits=2)), 
@@ -236,7 +240,7 @@ function run_gillespie!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::
     end
 
     return (production_count = production_count, suppression_count = suppression_count, 
-            performance_history = performance_history) 
+            performance_history = performance_history, loss_history = loss_history) 
 end
 
 function document_event!(action, epoch::Int, production_count::Array, suppression_count::Array)

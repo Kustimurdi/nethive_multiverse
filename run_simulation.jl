@@ -1,16 +1,22 @@
 using Pkg
-Pkg.activate("./env_qg_vector/")
+Pkg.activate("./env_nethive_multiverse/")
 
 # Load packages directly (they should be available via JULIA_PROJECT)
-using DataFrames
-using CSV
 using ArgParse
+using CSV
+using DataFrames
+using Flux
 using JSON3
+using MLDatasets
 using Random
+using Statistics
 using Dates
 
 # Load our modules
+include("src/data/registry.jl")
+include("src/data/loaders.jl")
 include("src/core/definitions.jl")
+include("src/training/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 
@@ -97,13 +103,16 @@ function create_default_config()
     """Create default configuration dictionary"""
     return Dict(
         "n_bees" => 5,
-        "dataset_names" => ["mnist", "fashion_mnist"],
+        "dataset_names" => [:mnist, :fashion_mnist, :cifar10],
         "n_epochs" => 10,
-        "n_steps" => 100,
-        "production_rate" => 500,
-        "interaction_rate" => 10,
+        "n_steps_per_epoch" => 5,
+        "production_rate" => 1,
+        "interaction_rate" => 1,
+        "learning_rate" => 0.01,
+        "punish_rate" => 0.1,
         "lambda_sensitivity" => 10.0,
         "batch_size" => 32,
+        "save_nn_epochs" => 0,
         "seed" => nothing  # Will be auto-generated if not specified
     )
 end
@@ -137,24 +146,6 @@ end
 """
 struct MultiTaskHiveConfig
     # Multi-task fields
-    dataset_names::Vector{Symbol}
-    n_tasks::Int
-    max_input_dim::Int
-    max_output_dim::Int
-    model_template::Function
-    task_mapping::Dict{Symbol, Int}
-    
-    # Simulation parameters
-    n_bees::UInt16
-    n_epochs::UInt64
-    n_steps_per_epoch::UInt16
-    production_rate::Float64
-    interaction_rate::Float64
-    learning_rate::Float32
-    punish_rate::Float32
-    lambda_sensitivity::Float16
-    random_seed::Int
-    save_nn_epochs::Int
     
     # Legacy compatibility fields
     dataset_name::String
@@ -162,39 +153,31 @@ struct MultiTaskHiveConfig
     task_config
     """
 
-function initialize_hive_from_config(config::Dict, model_template::Function, task_info::Dict)
+function initialize_hive_from_config(config::Dict, model_template::Function)
     """Initialize hive from configuration dictionary"""
     hive_config = MultiTaskHiveConfig(
-        config["dataset_names"],
-        length(config["dataset_names"]),
-        config["production_rate"],
-        config["degeneration_rate"],
-        config["interaction_rate"],
-        config["lambda_sensitivity"],
-        config["time_period_suppression"],
-        config["resolve_suppression_rate"],
+        Symbol.(config["dataset_names"]),  # Convert to Vector{Symbol}
+        model_template,
+        config["max_input_dim"],
+        config["max_output_dim"],
         config["n_bees"],
-        config["max_simulation_time"],
-        config["n_tasks"],
-        Symbol(config["interaction_kernel_prefactor_type"]),
-        Symbol(config["interaction_kernel_heaviside_arg_type"]);
-        record_history_interval = config["record_history_interval"]
+        config["n_epochs"],
+        config["n_steps_per_epoch"],
+        Float64(config["production_rate"]),
+        Float64(config["interaction_rate"]),
+        Float64(config["learning_rate"]),
+        Float64(config["punish_rate"]),
+        Float64(config["lambda_sensitivity"]),
+        config["seed"],
+        config["save_nn_epochs"]
     )
     
-    hive = nHive(hive_config)
-    
-    # Set initial conditions
-    if config["random_init"]
-        println("Random initialization of hive state...")
-        n_min, n_max = config["init_tasks_range"]
-        hive.current_task_values .= rand(n_min:n_max, config["n_bees"], config["n_tasks"])
-        hive.current_suppression_values .= rand(config["n_bees"]) .< config["init_suppression_prob"]
-    end
+    hive = MultiTaskHive(hive_config)
 
     return hive
 end
 
-function run_single_simulation(config::Dict, output_dir::String, run_folder_name::String; 
+function run_single_simulation(config::Dict, output_dir::String, foldername::String; 
                               timestamp::Bool=false, verbose::Bool=true, save_results=false, save_all=false)
     """Run a single simulation with given configuration"""
     
@@ -227,14 +210,14 @@ function run_single_simulation(config::Dict, output_dir::String, run_folder_name
     
     # Initialize loaders and hive
 
-    loaders, task_info, model_template = prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int=32)
-    max_input_dim, max_output_dim = calculate_universal_dimensions(dataset_names)
-    hive = initialize_hive_from_config(config, model_template, task_info)
+    loaders, task_info, model_template = prepare_multitask_setup(config["dataset_names"]; 
+                                            batch_size=config["batch_size"])
+    hive = initialize_hive_from_config(config, model_template)
     
     println("Starting simulation...")
     # Run simulation
     start_time = time()
-    results = run_gillespie_simulation!(hive, verbose=verbose)
+    results = run_gillespie_simulation!(hive, loaders; verbose=verbose)
 
     end_time = time()
     
@@ -250,8 +233,6 @@ function run_single_simulation(config::Dict, output_dir::String, run_folder_name
         return results
     end
 
-    foldername = run_folder_name
-
     if timestamp
         time_str = Dates.format(timepoint, "yyyy-mm-dd_HHMMSS")
         foldername *= "_$time_str"
@@ -262,15 +243,13 @@ function run_single_simulation(config::Dict, output_dir::String, run_folder_name
     if save_all
         save_simulation_results(results, run_output_dir;
                                 save_states=true,
-                                save_summary=true,
                                 save_events=true,
-                                save_suppression=true)
+                                save_losses=true)
     else        
         save_simulation_results(results, run_output_dir;
                                 save_states=true,
-                                save_summary=false,
                                 save_events=true,
-                                save_suppression=false)
+                                save_losses=false)
     end
 
     # Save configuration and metadata
@@ -296,13 +275,19 @@ function main()
     # Merge with command line arguments
     config = merge_config_with_args(config, args)
 
+    config["dataset_names"] = Symbol.(config["dataset_names"])
+    max_input_dim, max_output_dim = calculate_universal_dimensions(config["dataset_names"])
+    config["max_input_dim"] = max_input_dim
+    config["max_output_dim"] = max_output_dim
+
     println("Running simulation with the following configuration:")
     for (key, value) in config
         println("  $key: $value")
     end
     println()
 
-    config["dataset_names"] = Symbol.(config["dataset_names"])
+    println("verbose: $(args["verbose"])")
+    args["verbose"] = true
 
     # Run simulation
     results = run_single_simulation(
@@ -320,5 +305,5 @@ function main()
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    main()
+    #main()
 end

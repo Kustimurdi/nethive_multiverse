@@ -5,8 +5,6 @@ This module defines the data structures for multi-task hive simulations where
 bees (neural networks) can work on multiple classification tasks simultaneously.
 """
 
-using Flux
-using Dates
 
 """
     MultiTaskHiveConfig
@@ -48,46 +46,35 @@ struct MultiTaskHiveConfig
     max_input_dim::Int
     max_output_dim::Int
     model_template::Function
-    task_mapping::Dict{Symbol, Int}
+    task_to_index_mapping::Dict{Symbol, Int}
+    index_to_task_mapping::Dict{Int, Symbol}
     
     # Simulation parameters
-    n_bees::UInt16
-    n_epochs::UInt64
-    n_steps_per_epoch::UInt16
+    n_bees::Int
+    n_epochs::Int
+    n_steps_per_epoch::Int
     production_rate::Float64
     interaction_rate::Float64
-    learning_rate::Float32
-    punish_rate::Float32
-    lambda_sensitivity::Float16
+    learning_rate::Float64
+    punish_rate::Float64
+    lambda_sensitivity::Float64
     random_seed::Int
     save_nn_epochs::Int
     
-    # Legacy compatibility fields
-    dataset_name::String
-    parent_dataset_name::String
-    task_config
-    
-    #interaction_kernel_prefactor_type::Symbol
-    #interaction_kernel_heaviside_arg_type::Symbol das vielleicht noch
-
     function MultiTaskHiveConfig(dataset_names::Vector{Symbol},
                                 model_template::Function,
                                 max_input_dim::Int,
                                 max_output_dim::Int,
-                                n_bees::UInt16,
-                                n_epochs::UInt64,
-                                n_steps_per_epoch::UInt16,
+                                n_bees::Int,
+                                n_epochs::Int,
+                                n_steps_per_epoch::Int,
                                 production_rate::Float64,
                                 interaction_rate::Float64,
-                                learning_rate::Float32,
-                                punish_rate::Float32,
-                                lambda_sensitivity::Float16,
+                                learning_rate::Float64,
+                                punish_rate::Float64,
+                                lambda_sensitivity::Float64,
                                 random_seed::Int,
-                                save_nn_epochs::Int;
-                                # Legacy compatibility fields
-                                dataset_name::String="multi_task_experiment",
-                                parent_dataset_name::String="multi_task",
-                                task_config=nothing)
+                                save_nn_epochs::Int)
         
         # Validate parameters
         if n_bees < 1
@@ -117,9 +104,11 @@ struct MultiTaskHiveConfig
         
         # Create task mapping
         n_tasks = length(dataset_names)
-        task_mapping = Dict{Symbol, Int}()
+        task_to_index_mapping = Dict{Symbol, Int}()
+        index_to_task_mapping = Dict{Int, Symbol}()
         for (i, dataset_name) in enumerate(dataset_names)
-            task_mapping[dataset_name] = i
+            task_to_index_mapping[dataset_name] = i
+            index_to_task_mapping[i] = dataset_name
         end
         
         return new(dataset_names,
@@ -127,7 +116,8 @@ struct MultiTaskHiveConfig
                 max_input_dim,
                 max_output_dim,
                 model_template,
-                task_mapping,
+                task_to_index_mapping,
+                index_to_task_mapping,
                 n_bees,
                 n_epochs,
                 n_steps_per_epoch,
@@ -137,10 +127,7 @@ struct MultiTaskHiveConfig
                 punish_rate,
                 lambda_sensitivity,
                 random_seed,
-                save_nn_epochs,
-                dataset_name,
-                parent_dataset_name,
-                task_config)
+                save_nn_epochs)
     end
 end
 
@@ -276,8 +263,6 @@ mutable struct MultiTaskHive
     suppressed_tasks::Matrix{Bool}            # [bee, task] suppression status
     suppression_start_times::Matrix{Float64}  # [bee, task] suppression timing
 
-
-    
     function MultiTaskHive(config::MultiTaskHiveConfig;
                           initial_queen_genes::Union{Matrix{Float64}, Nothing}=nothing)
         

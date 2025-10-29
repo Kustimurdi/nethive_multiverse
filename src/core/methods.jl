@@ -15,11 +15,11 @@ Calculate interaction kernel between two bees for a specific task.
 
 Returns the strength of influence that bee2 has on bee1 for the target task.
 """
-function interaction_kernel(bee1_task_values::Vector{Int}, bee2_task_values::Vector{Int}, 
+function interaction_kernel(bee1_task_values::Vector{Float64}, bee2_task_values::Vector{Float64}, 
                            target_task::Int, lambda_sensitivity)::Float64
     # Get the calculation functions from the dictionaries
-    prefactor_fn = (b1::Vector{Int}, b2::Vector{Int}, t::Int) -> b1[t] * b2[t]
-    sigmoid_arg_fn = (b1::Vector{Int}, b2::Vector{Int}, t::Int) -> b2[t] - b1[t]
+    prefactor_fn = (b1::Vector{Float64}, b2::Vector{Float64}, t::Int) -> b1[t] * b2[t]
+    sigmoid_arg_fn = (b1::Vector{Float64}, b2::Vector{Float64}, t::Int) -> b2[t] - b1[t]
     
     # Calculate components
     prefactor = prefactor_fn(bee1_task_values, bee2_task_values, target_task)
@@ -101,16 +101,20 @@ function collect_all_rates(hive::MultiTaskHive)
         end
     end
     
+    println("sum of production rates: $(sum(production_rates))")
+    println("sum of interaction rates: $(sum(interaction_rates))")
+    
     return rates, actions
 end
 
-function execute_action!(hive::MultiTaskHive, action, train_loaders::Dict, test_loaders::Dict)
+function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
     type, bee1, bee2, task = action.type, action.bee1, action.bee2, action.task
     
     if type == :produce
         # Produce a gene for bee1, task
-        task_train_loader = train_loaders[hive.config.dataset_names[task]]
-        task_test_loader = test_loaders[hive.config.dataset_names[task]]
+        dataset_name = hive.config.index_to_task_mapping[task]
+        task_train_loader = loaders[dataset_name]["train"]
+        task_test_loader = loaders[dataset_name]["test"]
         perform_production!(hive, bee1, task, task_train_loader, task_test_loader)
         
     elseif type == :suppress
@@ -121,20 +125,23 @@ function execute_action!(hive::MultiTaskHive, action, train_loaders::Dict, test_
         error("Unknown action type: $type")
     end
 
-    accs, losses = evaluate_bee_on_all_tasks(hive, bee1, task, test_loaders) 
-    hive.queen_genes[bee1] .= accs
-    hive.losses[bee1] .= losses
+    accs, losses = evaluate_bee_on_all_tasks(hive, bee1, loaders) 
+    hive.queen_genes[bee1, :] .= accs
+    hive.losses[bee1, :] .= losses
     
     return type
 end
 
-function perform_suppression(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, partner_bee_idx::Int)
+function perform_suppression!(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, partner_bee_idx::Int)
     """
     Perform an interaction event where `bee_idx` interacts with `partner_bee_idx` on `task_idx`.
     
     This function updates the hive state to reflect the interaction.
     """
-#passiert noch
+    hive.brains[bee_idx] = hive.config.model_template()
+
+    # for now just reset the brain of the bee being influenced
+    return nothing
 end
 
 function select_gillespie_action(rates::Vector{Float64}, actions::Vector)
@@ -173,7 +180,7 @@ function advance_gillespie_time!(hive::MultiTaskHive, total_rate::Float64)
     #dt = -log(rand()) / total_rate
 
     #diese version sorgt dafür, dass wir selber bestimmen, wie viele Aktionen pro Epoche geschehen
-    dt = rand(Exponential(1 / (hive.config.n_steps_per_epoch)))
+    dt = -log(rand()) / hive.config.n_steps_per_epoch
     
     # Advance the hive time
     hive.current_time += dt
@@ -181,7 +188,8 @@ function advance_gillespie_time!(hive::MultiTaskHive, total_rate::Float64)
     return dt
 end
 
-function gillespie_step!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::Dict)
+function gillespie_step!(hive::MultiTaskHive, loaders::Dict)
+    println("time for a gillespie step at time $(hive.current_time)")
     # Step 1: Collect all possible actions and their rates
     rates, actions = collect_all_rates(hive)
     
@@ -194,7 +202,7 @@ function gillespie_step!(hive::MultiTaskHive, train_loaders::Dict, test_loaders:
     end
     
     # Step 3: Execute the selected action
-    execute_action!(hive, selected_action, train_loaders, test_loaders)
+    execute_action!(hive, selected_action, loaders)
     
     # Step 4: Advance time
     advance_gillespie_time!(hive, total_rate)
@@ -202,14 +210,14 @@ function gillespie_step!(hive::MultiTaskHive, train_loaders::Dict, test_loaders:
     return true, selected_action  # Event occurred successfully
 end
 
-function run_gillespie!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::Dict, verbose=false)
+function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=false)
 
-    production_count = Array{Int, 3}(undef, hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
-    suppression_count = Array{Int, 3}(undef, hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
-    performance_history = Array{Float64, 3}(undef, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
-    loss_history = Array{Float64, 3}(undef, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
+    production_count = zeros(Int, hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
+    suppression_count = zeros(Int, hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
+    performance_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
+    loss_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
 
-    update_all_bees!(hive, testloaders)
+    update_all_bees!(hive, loaders)
     performance_history[1, :, :] .= hive.queen_genes
     loss_history[1, :, :] .= hive.losses
 
@@ -217,11 +225,18 @@ function run_gillespie!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::
         while hive.current_time < epoch 
 
             # Run one Gillespie step
-            event_occurred, selected_action = gillespie_step!(hive, train_loaders, test_loaders)
+            event_occurred, selected_action = gillespie_step!(hive, loaders)
             if !event_occurred
                 break  # No more events possible
             end
             document_event!(selected_action, epoch, production_count, suppression_count)
+
+            accuracies, losses = evaluate_bee_on_all_tasks(hive, selected_action.bee1, loaders)
+            hive.queen_genes[selected_action.bee1, :] .= accuracies
+            hive.losses[selected_action.bee1, :] .= losses
+
+            println("action executed: $(selected_action)")
+            println("current accuracies: $(hive.queen_genes)")
 
         end
 
@@ -240,7 +255,8 @@ function run_gillespie!(hive::MultiTaskHive, train_loaders::Dict, test_loaders::
     end
 
     return (production_count = production_count, suppression_count = suppression_count, 
-            performance_history = performance_history, loss_history = loss_history) 
+            performance_history = performance_history, loss_history = loss_history, 
+            final_time=hive.current_time, total_events=sum(production_count) + sum(suppression_count))
 end
 
 function document_event!(action, epoch::Int, production_count::Array, suppression_count::Array)

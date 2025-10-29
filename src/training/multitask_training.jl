@@ -5,8 +5,6 @@ This module provides training and evaluation functions adapted for the simplifie
 where all bees have identical neural networks and train on tasks with equal probability.
 """
 
-using Flux
-using Statistics
 
 """
     perform_production!(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, train_loader, test_loader)
@@ -214,7 +212,7 @@ Evaluate a specific bee on all tasks.
 
 This function does not modify the hive state.
 """
-function evaluate_bee_on_all_tasks(hive::MultiTaskHive, bee_idx::Int, test_loaders::Dict)
+function evaluate_bee_on_all_tasks(hive::MultiTaskHive, bee_idx::Int, loaders::Dict)
     if bee_idx < 1 || bee_idx > hive.n_bees
         throw(ArgumentError("bee_idx must be between 1 and $(hive.n_bees)"))
     end
@@ -223,8 +221,8 @@ function evaluate_bee_on_all_tasks(hive::MultiTaskHive, bee_idx::Int, test_loade
     losses = Vector{Float64}(undef, hive.n_tasks)
     
     for task_idx in 1:hive.n_tasks
-        dataset_name = hive.config.dataset_names[task_idx]
-        test_loader = test_loaders[dataset_name]
+        dataset_name = hive.config.index_to_task_mapping[task_idx]
+        test_loader = loaders[dataset_name]["test"]
         accuracies[task_idx], losses[task_idx] = evaluate_bee_on_task(hive, bee_idx, task_idx, test_loader)
     end
     
@@ -281,11 +279,11 @@ Update all queen genes (performance matrix) by evaluating all bees on all tasks.
 
 This is useful for periodic full evaluation of the hive state.
 """
-function update_all_bees(hive::MultiTaskHive, test_loaders::Dict)
+function update_all_bees!(hive::MultiTaskHive, loaders::Dict)
     for bee_idx in 1:hive.n_bees
         for task_idx in 1:hive.n_tasks
-            dataset_name = hive.config.dataset_names[task_idx]
-            test_loader = test_loaders[dataset_name]
+            dataset_name = hive.config.index_to_task_mapping[task_idx]
+            test_loader = loaders[dataset_name]["test"]
             accuracy, loss = evaluate_bee_on_task(hive, bee_idx, task_idx, test_loader)
             hive.queen_genes[bee_idx, task_idx] = accuracy
             hive.losses[bee_idx, task_idx] = loss

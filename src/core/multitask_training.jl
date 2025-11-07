@@ -41,9 +41,10 @@ function perform_production!(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, t
     # Get the bee's brain
     model = hive.brains[bee_idx]
     learning_rate = hive.config.learning_rate
+    max_batches = hive.config.batches_per_step
     
     # Training phase
-    training_loss = train_model!(model, train_loader; learning_rate=learning_rate)
+    training_loss = train_model!(model, train_loader; learning_rate=learning_rate, max_batches=max_batches)
     
     # Evaluation phase
     accuracy = calc_classification_accuracy(model, test_loader)
@@ -54,13 +55,18 @@ function perform_production!(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, t
     return training_loss, accuracy
 end
 
-function train_model!(model, train_loader; learning_rate)
+function train_model!(model, train_loader; learning_rate, max_batches=nothing)
 
     opt_state = Flux.setup(Flux.Adam(learning_rate), model)
     total_batch_loss = 0.0
     n_batches = 0
     
     for (x_batch, y_batch) in train_loader
+        # Early termination if max_batches is specified
+        if max_batches !== nothing && n_batches >= max_batches
+            break
+        end
+        
         loss, grads = Flux.withgradient(model) do m
             Flux.Losses.logitcrossentropy(m(x_batch), y_batch)
         end
@@ -289,4 +295,30 @@ function update_all_bees!(hive::MultiTaskHive, loaders::Dict)
             hive.losses[bee_idx, task_idx] = loss
         end
     end
+end
+
+
+
+#possibly unnecessary
+function punish_model!(model::Flux.Chain, dataloader; punish_rate)
+    loss_fn = (x, y) -> Flux.Losses.logitcrossentropy(model(x), y)
+    
+    total_batch_loss = 0.0
+    n_batches = 0
+
+    for (x_batch, y_batch) in dataloader
+        # Use modern Flux gradient API
+        grads = Flux.gradient(model) do m
+            loss_fn(x_batch, y_batch)
+        end
+        
+        # Apply punishment: add gradients to make model worse
+        # Use negative learning rate in Descent to add gradients instead of subtracting
+        opt = Flux.Descent(-punish_rate)  # Negative rate means we ADD gradients
+        Flux.update!(opt, model, grads[1])
+
+        total_batch_loss += loss_fn(x_batch, y_batch)
+        n_batches += 1
+    end
+    return total_batch_loss/n_batches
 end

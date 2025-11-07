@@ -60,6 +60,8 @@ struct MultiTaskHiveConfig
     lambda_sensitivity::Float64
     random_seed::Int
     save_nn_epochs::Int
+    batches_per_step::Union{Int, Nothing}
+    dead_time::Float64
     
     function MultiTaskHiveConfig(dataset_names::Vector{Symbol},
                                 model_template::Function,
@@ -74,7 +76,9 @@ struct MultiTaskHiveConfig
                                 punish_rate::Float64,
                                 lambda_sensitivity::Float64,
                                 random_seed::Int,
-                                save_nn_epochs::Int)
+                                save_nn_epochs::Int,
+                                batches_per_step::Union{Int, Nothing},
+                                dead_time::Float64)
         
         # Validate parameters
         if n_bees < 1
@@ -127,7 +131,9 @@ struct MultiTaskHiveConfig
                 punish_rate,
                 lambda_sensitivity,
                 random_seed,
-                save_nn_epochs)
+                save_nn_epochs,
+                batches_per_step,
+                dead_time)
     end
 end
 
@@ -168,7 +174,9 @@ function create_multitask_hive_config(dataset_names::Vector{Symbol},
                                     punish_rate::Float64=0.01,
                                     lambda_sensitivity::Float64=1.0,
                                     random_seed::Int=42,
-                                    save_nn_epochs::Int=10)
+                                    save_nn_epochs::Int=10,
+                                    batches_per_step::Union{Int, Nothing}=nothing,
+                                    dead_time::Float64=1.0)
     
     # Calculate max dimensions from task_info
     max_input_dim = 0
@@ -210,7 +218,9 @@ function create_multitask_hive_config(dataset_names::Vector{Symbol},
         Float32(punish_rate),
         Float16(lambda_sensitivity),
         random_seed,
-        save_nn_epochs
+        save_nn_epochs,
+        batches_per_step,
+        dead_time
     )
 end
 

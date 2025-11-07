@@ -1,0 +1,92 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+using GLMakie
+using Statistics
+using CairoMakie
+```
+```{julia}
+GLMakie.activate!()
+#CairoMakie.activate!()
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/analyse.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize.jl")
+```
+
+# setup over
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/cifar10_learning_rate_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/single_tasks/gradient_ascend_1t20n"
+```
+
+```{julia}
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+runs = load_runs(master_df.run_path)
+```
+
+```{julia}
+best_run_id = -1
+best_score = -1
+
+for (i, run) in enumerate(runs)
+    states = run.states
+    last_epoch = maximum(states.epoch)
+    last_epoch_df = filter(row -> row.epoch == last_epoch, states)
+    score = axis_score(last_epoch_df.task_value)
+    if score > best_score
+        best_score = score
+        best_run_id = i
+    end
+end
+
+best_run = runs[best_run_id]
+```
+
+```{julia}
+fig = Figure(resolution = (1000, 600))
+ax = Axis(fig[1, 1], 
+            xlabel = "Epoch", 
+            ylabel = "Accuracy",
+            title = "Evolution of the accuracy")
+# Use cycling colors to handle more runs than available colors
+wong_colors = Makie.wong_colors()
+states = best_run.states
+bee_ids = unique(sort(states.bee_id))
+colors = [wong_colors[((i-1) % length(wong_colors)) + 1] for i in 1:length(bee_ids)]
+
+for i in bee_ids
+    states_bee = filter(row -> row.bee_id == i, states)
+    lines!(ax, states_bee.epoch, states_bee.task_value, 
+            color = colors[i], linewidth=2, label = "bee id: $(i)")
+    #lines!(ax, run.events.epoch, run.events.production_count)
+
+    axislegend(ax, position = :lt)
+    
+    # Add grid
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+
+end
+fig
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "accuracy_evo.png"), fig)
+save(joinpath(save_path, "accuracy_evo.pdf"), fig)
+```
+
+```{julia}
+filtered_master = filter(row -> row.learning_rate == 0.0001 && row.punish_rate == 0.0001, master_df)
+```

@@ -1,0 +1,18 @@
+{
+    "base_config": {
+        "n_bees": 10,
+        "dataset_names": ["mnist"],
+        "n_epochs": 30,
+        "n_steps_per_epoch": 5,
+        "learning_rate": 0.01,
+        "punish_rate": 0.1,
+        "batch_size": 32,
+        "save_nn_epochs": 0,
+        "seed": null,
+        "interaction_rate": 1.0
+    },
+    "sweep_parameters": {
+        "lambda_sensitivity": [1.0, 10.0, 100.0],
+        "production_rate": [0.1, 1.0, 10.0, 100.0]
+    }
+}

@@ -1,0 +1,58 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/analyse.jl")
+using GLMakie
+using Statistics
+#using CairoMakie
+```
+
+# Get unique sorted axis values
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_2_tasks_2_bees_adding_2nd_qg_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/multi_task_simulations/2tasks_2bees_heaviside_onesided_subtraction"
+data_path = joinpath(folder_path, "data")
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+specific_runs = filter(row -> row.interaction_rate .== 0.1 && row.lambda_sensitivity .== 10, master_df)
+```
+
+```{julia}
+individual_run_path = specific_runs.run_path[1]
+run_data = load_run(individual_run_path)
+states = run_data.states
+groups = groupby(states, :bee_id)
+bee_ids = unique(states.bee_id)
+```
+
+```{julia}
+set_theme!(fontsize=25)
+colors = [:blue, :red]
+
+f = Figure( resolution = (1200, 600) )
+ax1 = Axis(f[1,1], title="Task 1", xlabel="Time[s]", ylabel="Accuracy 1")
+ax2 = Axis(f[1,2], title="Task 2", xlabel="Time[s]", ylabel="Accuracy 2")
+
+for (i,g) in enumerate(groups) 
+    scatter!(ax1, g.time, g.n1, label="bee_id=$(g.bee_id[1])", color=colors[i])
+    scatter!(ax2, g.time, g.n2, label="bee_id=$(g.bee_id[1])", color=colors[i])
+end
+
+axislegend(ax1, position=(1.0, 0.6))
+axislegend(ax2, position=(1.0, 0.6))
+f
+```
+
+```{julia}
+base_name = basename(individual_run_path)
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+filename = "queen_gene_time_evolution_$(base_name)_horizontally.pdf"
+save(joinpath(save_path, filename), f)
+```

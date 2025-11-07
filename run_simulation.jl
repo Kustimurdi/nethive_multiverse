@@ -13,10 +13,9 @@ using Statistics
 using Dates
 
 # Load our modules
-include("src/data/registry.jl")
 include("src/data/loaders.jl")
 include("src/core/definitions.jl")
-include("src/training/multitask_training.jl")
+include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 
@@ -74,6 +73,12 @@ function parse_commandline()
         "--lambda-sensitivity"
             help = "Lambda sensitivity parameter"
             arg_type = Float64
+        "--punish-rate"
+            help = "Punish rate"
+            arg_type = Float64
+        "--dead-time"
+            help = "Dead time for bees"
+            arg_type = Float64
         # Initial conditions
         "--random-init"
             help = "Use random initial conditions"
@@ -83,6 +88,10 @@ function parse_commandline()
             help = "Batch size for data loaders"
             arg_type = Int
             default = 32
+        "--batches-per-step"
+            help = "Number of batches per training step (if applicable)"
+            arg_type = Int
+            default = nothing
     end
     
     return parse_args(s)
@@ -107,13 +116,15 @@ function create_default_config()
         "n_epochs" => 10,
         "n_steps_per_epoch" => 5,
         "production_rate" => 1,
-        "interaction_rate" => 1,
+        "interaction_rate" => 20,
         "learning_rate" => 0.01,
         "punish_rate" => 0.1,
-        "lambda_sensitivity" => 10.0,
+        "lambda_sensitivity" => 1000.0,
         "batch_size" => 32,
         "save_nn_epochs" => 0,
-        "seed" => nothing  # Will be auto-generated if not specified
+        "seed" => nothing,  # Will be auto-generated if not specified
+        "batches_per_step" => nothing,
+        "dead_time" => 1.0
     )
 end
 
@@ -131,7 +142,9 @@ function merge_config_with_args(config::Dict, args::Dict)
         "production-rate" => "production_rate",
         "interaction-rate" => "interaction_rate",
         "lambda-sensitivity" => "lambda_sensitivity",
-        "batch-size" => "batch_size"
+        "batch-size" => "batch_size",
+        "batches-per-step" => "batches_per_step",
+        "dead-time" => "dead_time"
     )
     
     for (arg_key, config_key) in arg_mapping
@@ -142,16 +155,6 @@ function merge_config_with_args(config::Dict, args::Dict)
     
     return merged
 end
-
-"""
-struct MultiTaskHiveConfig
-    # Multi-task fields
-    
-    # Legacy compatibility fields
-    dataset_name::String
-    parent_dataset_name::String
-    task_config
-    """
 
 function initialize_hive_from_config(config::Dict, model_template::Function)
     """Initialize hive from configuration dictionary"""
@@ -169,7 +172,9 @@ function initialize_hive_from_config(config::Dict, model_template::Function)
         Float64(config["punish_rate"]),
         Float64(config["lambda_sensitivity"]),
         config["seed"],
-        config["save_nn_epochs"]
+        config["save_nn_epochs"],
+        config["batches_per_step"],
+        Float64(config["dead_time"])
     )
     
     hive = MultiTaskHive(hive_config)
@@ -254,6 +259,8 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
 
     # Save configuration and metadata
     save_metadata_to_config(config, run_output_dir)
+    task_mapping = Dict(k => string(v) for (k, v) in hive.config.index_to_task_mapping)
+    save_task_mapping(task_mapping, run_output_dir)
 
     if verbose
         println("All results saved to directory: $run_output_dir")
@@ -286,9 +293,6 @@ function main()
     end
     println()
 
-    println("verbose: $(args["verbose"])")
-    args["verbose"] = true
-
     # Run simulation
     results = run_single_simulation(
         config,
@@ -305,5 +309,5 @@ function main()
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    #main()
+    main()
 end

@@ -1,0 +1,281 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+#using GLMakie
+using Statistics
+using CairoMakie
+```
+```{julia}
+#GLMakie.activate!()
+CairoMakie.activate!()
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/analyse.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize.jl")
+```
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4n4t"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4_tasks"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4t4n_big_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_4t4n"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/no_punishment_4t4n"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend/gradient_ascend_fewer_batches_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4t4n_fewer_batches/"
+data_path = joinpath(folder_path, "data")
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+runs = load_runs(master_df.run_path)
+```
+
+# plotting the accuracy evolution of the tasks for each individual neural network
+
+```{julia}
+best_run = find_best_run(runs, run_type=:raw, test_type=:run_average)
+```
+
+```{julia}
+save_all = false
+plottype = :scatter
+#states_df = load_states(joinpath("$(result.run.run_path)", "states.csv"))
+states_df = best_run.run.states
+n_bees = sort(unique(states_df.bee_id))
+
+example_bees = n_bees[1:min(4, length(n_bees))]
+bee_figures = []
+
+folder_name = basename(folder_path)
+run_name = basename(result.run.run_path)
+
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+
+for bee_id in example_bees
+    fig = plot_bee_tasks(states_df, bee_id, plot_type=plottype)
+    push!(bee_figures, fig)
+    
+    if save_all
+        # Save individual plots
+        save(joinpath(save_path, "bee_$(bee_id)_tasks_$(folder_name)_$(run_name)_$(String(plottype)).png"), fig)
+        save(joinpath(save_path, "bee_$(bee_id)_tasks_$(folder_name)_$(run_name)_$(String(plottype)).pdf"), fig)
+    end
+end
+
+# Display first bee's plot
+bee_figures[1]
+```
+
+# inspect the dataframes
+
+```{julia}
+states_b1 = filter(row -> row.bee_id == 1, best_run.run.states)
+states_b1_epoch_filtered = filter(row -> row.epoch >= 57 && row.epoch <= 59 && (row.task_id == 1 || row.task_id == 2), states_b1)
+#events_b1 = filter(row -> row.bee_)
+```
+```{julia}
+events_filtered = filter(row -> row.production_count[1] + row.suppression_count[1] != 0, best_run.run.events)
+events_b1 = filter(row -> row.bee1_id == 1, events_filtered)
+events_epoch_filtered = filter(row -> row.epoch <= 59 && row.epoch >= 56, events_b1)
+```
+
+```{julia}
+for row in eachrow(events_epoch_filtered)
+    if (row.production_count[1] + row.suppression_count[1]) == 1
+        println(row.epoch)
+    end
+end
+```
+
+```{julia}
+# ...existing code...
+# paste into your notebook / a new cell
+
+using DataFrames
+
+# choose bee to inspect
+bee = 1
+
+# pick states/events tables from your run
+states = best_run.run.states
+events = best_run.run.events
+
+# try to detect the column that holds the task value
+valcol = findfirst(name -> occursin("val", lowercase(String(name))) || occursin("value", lowercase(String(name))), names(states))
+if valcol === nothing
+    println("Could not auto-detect task value column. Columns are: ", names(states))
+    # abort so you can pick the correct column name
+else
+    valcol = names(states)[valcol]
+    println("Using value column: ", valcol)
+
+    # filter for the bee and tasks 1 & 2
+    s = filter(row -> row.bee_id == bee && (row.task_id == 1 || row.task_id == 2), states)
+
+    # pivot so each epoch has task1 and task2 in columns
+    wide = try
+        unstack(s, [:epoch, :bee_id], :task_id, valcol)
+    catch err
+        println("unstack failed: ", err)
+        println("Sample rows for inspection:")
+        show(first(s, 10))
+        throw(err)
+    end
+
+    # normalize column names for tasks 1 and 2
+    # find the two new columns created (exclude epoch, bee_id)
+    taskcols = setdiff(names(wide), [:epoch, :bee_id])
+    if length(taskcols) < 2
+        println("Unexpected pivot result; columns: ", names(wide))
+    else
+        # attempt to map the two task columns to :task1 and :task2 based on their original names
+        # if names are like Symbol("1"), Symbol("2"), handle that
+        rename_map = Dict{Symbol,Symbol}()
+        for c in taskcols
+            sname = String(c)
+            if occursin("1", sname)
+                rename_map[c] = :task1
+            elseif occursin("2", sname)
+                rename_map[c] = :task2
+            end
+        end
+        # if mapping incomplete, just assign by position
+        if !haskey(rename_map, :task1) || !haskey(rename_map, :task2)
+            rename_map = Dict(taskcols[1] => :task1, taskcols[2] => :task2)
+        end
+        rename!(wide, rename_map)
+
+        sort!(wide, :epoch)
+
+        # compute per-epoch change (diff from previous epoch)
+        wide.task1_diff = [missing; diff(wide.task1)]
+        wide.task2_diff = [missing; diff(wide.task2)]
+
+        # select epochs where both increased
+        both_inc = filter(row -> row.task1_diff !== missing &&
+                                row.task2_diff !== missing &&
+                                row.task1_diff > 0 &&
+                                row.task2_diff > 0, wide)
+
+        println("Epochs where task1 and task2 both increased for bee ", bee, ":")
+        println(both_inc[:, [:epoch, :task1, :task1_diff, :task2, :task2_diff]])
+
+        if nrow(both_inc) == 0
+            println("No simultaneous increases found.")
+        else
+            epochs = both_inc.epoch |> collect
+            # find events at those epochs involving this bee
+            # adapt the bee-field names as in your events DF (bee1_id, bee2_id, bee_id, ...)
+            ev = filter(row ->
+                        (haskey(row, :epoch) && row.epoch in epochs) &&
+                        ((haskey(row, :bee1_id) && row.bee1_id == bee) ||
+                         (haskey(row, :bee2_id) && row.bee2_id == bee) ||
+                         (haskey(row, :bee_id) && row.bee_id == bee)),
+                        events)
+
+            println("\nEvents at those epochs involving bee ", bee, ":")
+            show(ev)
+        end
+    end
+end
+```
+
+```{julia}
+# ...existing code...
+# paste into your notebook / a new cell
+
+using DataFrames
+
+# choose bee to inspect
+bee = 1
+
+# pick states/events tables from your run
+states = best_run.run.states
+events = best_run.run.events
+
+# try to detect the column that holds the task value
+valcol = findfirst(name -> occursin("val", lowercase(String(name))) || occursin("value", lowercase(String(name))), names(states))
+if valcol === nothing
+    println("Could not auto-detect task value column. Columns are: ", names(states))
+    # abort so you can pick the correct column name
+else
+    valcol = names(states)[valcol]
+    println("Using value column: ", valcol)
+
+    # filter for the bee and tasks 1 & 2
+    s = filter(row -> row.bee_id == bee && (row.task_id == 1 || row.task_id == 2), states)
+
+    # pivot so each epoch has task1 and task2 in columns
+    wide = try
+        unstack(s, [:epoch, :bee_id], :task_id, valcol)
+    catch err
+        println("unstack failed: ", err)
+        println("Sample rows for inspection:")
+        show(first(s, 10))
+        throw(err)
+    end
+
+    # normalize column names for tasks 1 and 2
+    # find the two new columns created (exclude epoch, bee_id)
+    taskcols = setdiff(names(wide), [:epoch, :bee_id])
+    if length(taskcols) < 2
+        println("Unexpected pivot result; columns: ", names(wide))
+    else
+        # ensure keys are Symbols (unstack can yield Strings or Symbols)
+        rename_map = Dict{Symbol,Symbol}()
+        for c in taskcols
+            c_sym = isa(c, Symbol) ? c : Symbol(string(c))
+            sname = String(c_sym)
+            if occursin("1", sname)
+                rename_map[c_sym] = :task1
+            elseif occursin("2", sname)
+                rename_map[c_sym] = :task2
+            end
+        end
+        # if mapping incomplete, just assign by position (convert to Symbol)
+        if !haskey(rename_map, :task1) || !haskey(rename_map, :task2)
+            rename_map = Dict(Symbol(string(taskcols[1])) => :task1,
+                              Symbol(string(taskcols[2])) => :task2)
+        end
+        rename!(wide, rename_map)
+
+        sort!(wide, :epoch)
+
+        # compute per-epoch change (diff from previous epoch)
+        wide.task1_diff = [missing; diff(wide.task1)]
+        wide.task2_diff = [missing; diff(wide.task2)]
+
+        # select epochs where both increased
+        both_inc = filter(row -> row.task1_diff !== missing &&
+                                row.task2_diff !== missing &&
+                                row.task1_diff > 0 &&
+                                row.task2_diff > 0, wide)
+
+        println("Epochs where task1 and task2 both increased for bee ", bee, ":")
+        println(both_inc[:, [:epoch, :task1, :task1_diff, :task2, :task2_diff]])
+
+        if nrow(both_inc) == 0
+            println("No simultaneous increases found.")
+        else
+            epochs = both_inc.epoch |> collect
+            # find events at those epochs involving this bee
+            # adapt the bee-field names as in your events DF (bee1_id, bee2_id, bee_id, ...)
+            ev = filter(row ->
+                        (haskey(row, :epoch) && row.epoch in epochs) &&
+                        ((haskey(row, :bee1_id) && row.bee1_id == bee) ||
+                         (haskey(row, :bee2_id) && row.bee2_id == bee) ||
+                         (haskey(row, :bee_id) && row.bee_id == bee)),
+                        events)
+
+            println("\nEvents at those epochs involving bee ", bee, ":")
+            show(ev)
+        end
+    end
+end
+# ...existing code...
+```

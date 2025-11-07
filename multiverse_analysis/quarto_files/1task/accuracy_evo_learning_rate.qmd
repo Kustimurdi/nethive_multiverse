@@ -1,0 +1,73 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+using GLMakie
+using Statistics
+using CairoMakie
+```
+```{julia}
+GLMakie.activate!()
+#CairoMakie.activate!()
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/analyse.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize.jl")
+```
+
+# setup over
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/cifar10_learning_rate_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/single_tasks/gradient_ascend_1t20n"
+```
+
+```{julia}
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+runs = load_runs(master_df.run_path)
+```
+
+```{julia}
+best_run = find_best_run(runs, run_type=:raw)
+```
+
+```{julia}
+fig = Figure(resolution = (1000, 600))
+ax = Axis(fig[1, 1], 
+            xlabel = "Epoch", 
+            ylabel = "Accuracy",
+            title = "Evolution of the accuracy")
+# Use cycling colors to handle more runs than available colors
+wong_colors = Makie.wong_colors()
+colors = [wong_colors[((i-1) % length(wong_colors)) + 1] for i in 1:length(runs)]
+
+for (i, run) in enumerate(runs)
+    states = run.states
+    lr = run.config.learning_rate
+    lines!(ax, states.epoch, states.task_value, 
+            color = colors[i], linewidth=4, label = "learning rate: $lr")
+    #lines!(ax, run.events.epoch, run.events.production_count)
+
+    axislegend(ax, position = :lt)
+    
+    # Add grid
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+
+end
+fig
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "accuracy_evo.png"), fig)
+save(joinpath(save_path, "accuracy_evo.pdf"), fig)
+```

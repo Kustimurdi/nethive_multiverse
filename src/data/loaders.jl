@@ -95,6 +95,7 @@ function calculate_universal_dimensions(dataset_names::Vector{Symbol})
         :fashion_mnist => (input_dim=784, n_classes=10),  # 28*28 = 784
         :cifar10 => (input_dim=3072, n_classes=10),       # 32*32*3 = 3072
         :cifar100 => (input_dim=3072, n_classes=100),     # 32*32*3 = 3072
+        :svhn2 => (input_dim=3072, n_classes=10)          # 32*32*3 = 3072
     )
     
     max_input_dim = 0
@@ -134,6 +135,8 @@ function register_dataset_with_padding!(dataset_name::Symbol, target_input_dim::
         return register_fashion_mnist!(target_input_dim, target_output_dim)
     elseif dataset_name == :cifar10
         return register_cifar10!(target_input_dim, target_output_dim)
+    elseif dataset_name == :svhn2
+        return register_svhn2!(target_input_dim, target_output_dim)
     else
         throw(ArgumentError("Unknown dataset: $dataset_name"))
     end

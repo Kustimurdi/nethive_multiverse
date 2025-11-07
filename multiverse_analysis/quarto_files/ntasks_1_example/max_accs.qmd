@@ -1,0 +1,159 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+using GLMakie
+using Statistics
+using CairoMakie
+```
+```{julia}
+GLMakie.activate!()
+#CairoMakie.activate!()
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/analyse.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize.jl")
+```
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4n4t"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4_tasks"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_4t4n"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/no_punishment_4t4n"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4t4n_big_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_fewer_batches_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4t4n_fewer_batches/"
+data_path = joinpath(folder_path, "data")
+
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+```
+
+# analysis of the processed data
+
+```{julia}
+filtered_master = filter(row -> row.learning_rate < 1, master_df)
+processed_runs = load_processed_runs(master_df.run_path)
+result = find_best_run(processed_runs, test_type=:run_average)
+println("Best run is at index $(result.index) with total task_value: $(result.total_task_value)")
+```
+
+```{julia}
+analysis_df = result.run.analysis_df
+fig = plot_best_task_evolution(analysis_df)
+```
+
+```{julia}
+folder_name = basename(folder_path)
+run_name = basename(result.run.run_path)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "best_task_value_time_evo_$(folder_name)_$(run_name).png"), fig)
+save(joinpath(save_path, "best_task_value_time_evo_$(folder_name)_$(run_name).pdf"), fig)
+```
+
+
+# average gain in accuracy per task per epoch
+
+```{julia}
+runs = load_runs(master_df.run_path)
+best_run = find_best_run(runs, run_type=:raw)
+```
+```{julia}
+# Calculate epoch-to-epoch changes for each bee-task combination
+# Using simple array indexing instead of ShiftedArrays
+
+
+# Sort by bee_id, task_id, and epoch to ensure proper ordering
+#states_df = load_states(joinpath(result.run.run_path, "states.csv"))
+states_df = best_run.run.states
+sort!(states_df, [:bee_id, :task_id, :epoch])
+
+# Group by bee_id and task_id
+gdf = groupby(states_df, [:bee_id, :task_id])
+
+# Add epoch-to-epoch absolute difference using simple array operations
+transform!(gdf, :task_value => (v -> begin
+    if length(v) <= 1
+        return [missing]  # Single value groups have no change
+    else
+        return [missing; diff(v)]  # diff() calculates v[i] - v[i-1]
+    end
+end) => :delta_value)
+
+# Add relative/percent change 
+transform!(gdf, :task_value => (v -> begin
+    if length(v) <= 1
+        return [missing]
+    else
+        prev_vals = v[1:end-1]  # Previous values
+        curr_vals = v[2:end]    # Current values
+        pct_changes = (curr_vals .- prev_vals) ./ prev_vals
+        return [missing; pct_changes]
+    end
+end) => :pct_change)
+
+# Remove missing values (first epoch in each group has no previous value)
+states_with_changes = filter(row -> !ismissing(row.delta_value), states_df)
+
+println("Epoch-to-epoch changes calculated:")
+println("- delta_value: absolute change from previous epoch")
+println("- pct_change: relative change from previous epoch") 
+println("- Total rows with changes: $(nrow(states_with_changes))")
+```
+
+```{julia}
+# Summary statistics for changes
+using Statistics
+
+change_summary = combine(groupby(states_with_changes, [:task_id]), 
+    :delta_value => mean => :mean_delta,
+    :delta_value => std => :std_delta,
+    :pct_change => (x -> mean(skipmissing(x))) => :mean_pct_change,
+    :delta_value => (x -> sum(x .> 0) / length(x)) => :fraction_improving
+)
+
+println("Change summary by task:")
+println(change_summary)
+```
+
+```{julia}
+# Plot average changes over epochs
+fig_changes = Figure(resolution = (1000, 600))
+ax = Axis(fig_changes[1, 1], 
+          xlabel = "Epoch", 
+          ylabel = "Average Task Value Change",
+          title = "Average Epoch-to-Epoch Changes by Task")
+
+# Calculate average change per epoch and task
+epoch_changes = combine(groupby(states_with_changes, [:epoch, :task_id]), 
+    :delta_value => mean => :avg_delta)
+
+tasks = sort(unique(epoch_changes.task_id))
+colors = Makie.wong_colors()[1:length(tasks)]
+
+for (i, task) in enumerate(tasks)
+    task_data = filter(row -> row.task_id == task, epoch_changes)
+    lines!(ax, task_data.epoch, task_data.avg_delta, 
+           color = colors[i], linewidth = 2, label = "Task $task")
+end
+
+# Add horizontal line at zero
+hlines!(ax, 0, color = :black, linestyle = :dash, alpha = 0.5)
+
+axislegend(ax, position = :rt)
+ax.xgridvisible = true
+ax.ygridvisible = true
+
+fig_changes
+```
+
+

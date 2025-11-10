@@ -51,7 +51,7 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "02:30:00"
+            default = "05:30:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int

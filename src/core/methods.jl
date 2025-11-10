@@ -1,4 +1,4 @@
-const punishment = :gradient_ascend    # options: :resetting, :time_out, :none
+const punishment = :time_out    # options: :resetting, :time_out, :none
 
 function get_production_rates_basic(hive::MultiTaskHive)::Matrix{Float64}
     """
@@ -315,6 +315,8 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
     performance_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
     loss_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
 
+    log = GillespieEventLog()
+
     update_all_bees!(hive, loaders)
     performance_history[1, :, :] .= hive.queen_genes
     loss_history[1, :, :] .= hive.losses
@@ -328,6 +330,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
                 break  # No more events possible
             end
             document_event!(selected_action, epoch, production_count, suppression_count)
+            log_events(log, hive, selected_action)
 
             println("action executed: $(selected_action)")
             println("current accuracies: $(hive.queen_genes)")
@@ -350,9 +353,14 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
         end
     end
 
-    return (production_count = production_count, suppression_count = suppression_count, 
+    return (log = log, production_count = production_count, suppression_count = suppression_count, 
             performance_history = performance_history, loss_history = loss_history, 
             final_time=hive.current_time, total_events=sum(production_count) + sum(suppression_count))
+end
+
+function log_events(log::GillespieEventLog, hive::MultiTaskHive, action)
+    bee_accs = hive.queen_genes[action.bee1, :]
+    push_event!(log, hive.current_time, action.bee1, action.bee2, action.task, bee_accs)
 end
 
 function document_event!(action, epoch::Int, production_count::Array, suppression_count::Array)

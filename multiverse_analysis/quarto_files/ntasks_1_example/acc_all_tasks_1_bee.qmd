@@ -22,7 +22,8 @@ include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multivers
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4t4n_big_sweep"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_4t4n"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/no_punishment_4t4n"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend/gradient_ascend_fewer_batches_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend/gradient_ascend_fewer_batches_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout/timeout_4t4n_deadtime_sweep"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4t4n_fewer_batches/"
 data_path = joinpath(folder_path, "data")
 ```
@@ -39,8 +40,8 @@ best_run = find_best_run(runs, run_type=:raw, test_type=:run_average)
 ```
 
 ```{julia}
-save_all = false
-plottype = :scatter
+save_all = true
+plottype = :line
 #states_df = load_states(joinpath("$(result.run.run_path)", "states.csv"))
 states_df = best_run.run.states
 n_bees = sort(unique(states_df.bee_id))

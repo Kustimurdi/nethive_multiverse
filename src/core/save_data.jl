@@ -158,3 +158,51 @@ function save_task_mapping(task_mapping::Dict{Int, String}, output_dir::String)
     println("Task index mapping saved to: $filepath")
     return task_mapping
 end
+
+function save_log(log::GillespieEventLog, output_dir::String)
+    if !isdir(output_dir)
+        mkpath(output_dir)
+    end
+    
+    filepath = joinpath(output_dir, "event_log.json")
+    open(filepath, "w") do io
+        JSON3.pretty(io, log)
+    end
+    
+    println("Event log saved to: $filepath")
+    return log
+end
+
+function log_to_dataframe(log::GillespieEventLog)
+    n = length(log.time)
+    n_tasks = length(log.accuracies[1])
+    accuracy_cols = [Symbol("task_$i") for i in 1:n_tasks]
+
+    # Initialize columns for accuracies
+    accuracy_data = [getindex.(log.accuracies, i) for i in 1:n_tasks]
+
+    df = DataFrame(
+        time = log.time,
+        bee1_id = log.bee1_id,
+        bee2_id = log.bee2_id,
+        task_id = log.task_id,
+    )
+
+    for (colname, coldata) in zip(accuracy_cols, accuracy_data)
+        df[!, colname] = coldata
+    end
+
+    return df
+end
+
+function save_log_df(df::DataFrame, output_dir::String)
+    if !isdir(output_dir)
+        mkpath(output_dir)
+    end
+    
+    filepath = joinpath(output_dir, "event_log.csv")
+    CSV.write(filepath, df)
+    
+    println("Event log DataFrame saved to: $filepath")
+    return df
+end

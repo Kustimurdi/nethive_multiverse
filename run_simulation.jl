@@ -1,5 +1,6 @@
 using Pkg
 Pkg.activate("./env_nethive_multiverse/")
+#Pkg.instantiate()
 
 # Load packages directly (they should be available via JULIA_PROJECT)
 using ArgParse
@@ -119,7 +120,7 @@ function create_default_config()
         "interaction_rate" => 20,
         "learning_rate" => 0.01,
         "punish_rate" => 0.1,
-        "lambda_sensitivity" => 1000.0,
+        "lambda_sensitivity" => 100.0,
         "batch_size" => 32,
         "save_nn_epochs" => 0,
         "seed" => nothing,  # Will be auto-generated if not specified
@@ -255,6 +256,24 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                                 save_states=true,
                                 save_events=true,
                                 save_losses=false)
+    end
+
+    log_df = log_to_dataframe(results.log)
+    println("Saving event log (raw and DataFrame)...")
+    println("log DataFrame size: ", size(log_df))
+    println("short view:")
+    show(first(log_df, 5))
+    # Save raw GillespieEventLog as JSON (if available) and also save the DataFrame CSV
+    try
+        save_log(results.log, run_output_dir)
+    catch e
+        @warn "Could not save raw event log: $e"
+    end
+
+    try
+        save_log_df(log_df, run_output_dir)
+    catch e
+        @warn "Could not save event log DataFrame: $e"
     end
 
     # Save configuration and metadata

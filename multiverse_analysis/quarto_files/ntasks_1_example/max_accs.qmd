@@ -1,13 +1,15 @@
 ```{julia}
 using Pkg
 Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
-using GLMakie
+#using GLMakie
 using Statistics
 using CairoMakie
 ```
 ```{julia}
-GLMakie.activate!()
-#CairoMakie.activate!()
+#GLMakie.activate!()
+using Statistics
+using CairoMakie
+CairoMakie.activate!()
 ```
 
 ```{julia}
@@ -23,7 +25,8 @@ include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multivers
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/no_punishment_4t4n"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/resetting_4t4n_big_sweep"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_fewer_batches_sweep"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4t4n_fewer_batches/"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout_4t4n_fewer_batches/"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout/timeout_4t4n_deadtime_sweep"
 data_path = joinpath(folder_path, "data")
 
 ```
@@ -34,11 +37,19 @@ master_df = build_master_dataframe(data_path)
 
 # analysis of the processed data
 
+## normal way of getting the best run
 ```{julia}
-filtered_master = filter(row -> row.learning_rate < 1, master_df)
+#filtered_master = filter(row -> row.learning_rate < 1, master_df)
 processed_runs = load_processed_runs(master_df.run_path)
 result = find_best_run(processed_runs, test_type=:run_average)
 println("Best run is at index $(result.index) with total task_value: $(result.total_task_value)")
+```
+
+## choosing a run manually
+```{julia}
+master_filtered = filter(row -> row.dead_time>3, master_df)
+filtered_runs = load_processed_runs(master_filtered.run_path)
+result = find_best_run(filtered_runs, test_type=:run_average)
 ```
 
 ```{julia}

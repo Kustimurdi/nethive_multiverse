@@ -12,8 +12,6 @@ function prepare_bank_marketing(directory_path::String)
     return df
 end
 
-using CategoricalArrays
-
 df = prepare_bank_marketing("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/")
 
 function preprocess_dataset(df::DataFrame; label_col::Union{Symbol, Int, Nothing}=nothing, pad_value::Float32=0f0)
@@ -177,6 +175,8 @@ bank_full_df = CSV.read(joinpath(directory_path, "bank-full.csv"), DataFrame)
 
 x, y, enc = preprocess_dataset(bank_df, label_col=:y)
 x_full, y_full, enc_full = preprocess_dataset(bank_full_df, label_col=:y)
+
+y, classes = encode_labels(bank_df.y)
 
 using MLDatasets
 MLDatasets.MNIST

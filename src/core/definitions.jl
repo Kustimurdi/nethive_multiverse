@@ -341,3 +341,23 @@ hive = create_multitask_hive(config)
 function create_multitask_hive(config::MultiTaskHiveConfig; kwargs...)
     return MultiTaskHive(config; kwargs...)
 end
+
+mutable struct GillespieEventLog
+    time::Vector{Float64}
+    bee1_id::Vector{Int}
+    bee2_id::Vector{Int}
+    task_id::Vector{Int}
+    accuracies::Vector{Vector{Float64}}  # or Matrix{Float64} if task count is fixed
+end
+
+function GillespieEventLog()
+    GillespieEventLog(Float64[], Int[], Int[], Int[], Vector{Vector{Float64}}())
+end
+
+function push_event!(log::GillespieEventLog, time, bee1, bee2, task, accuracies)
+    push!(log.time, time)
+    push!(log.bee1_id, bee1)
+    push!(log.bee2_id, bee2)
+    push!(log.task_id, task)
+    push!(log.accuracies, accuracies)
+end

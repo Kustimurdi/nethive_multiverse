@@ -1,0 +1,38 @@
+```{julia}
+using Pkg
+Pkg.activate("./env_nethive_multiverse/")
+#Pkg.instantiate()
+
+# Load packages directly (they should be available via JULIA_PROJECT)
+using ArgParse
+using CSV
+using DataFrames
+using Flux
+using JSON3
+using MLDatasets
+using Random
+using Statistics
+using Dates
+
+# Load our modules
+include("src/data/loaders.jl")
+include("src/core/definitions.jl")
+include("src/core/multitask_training.jl")
+include("src/core/methods.jl")
+include("src/core/save_data.jl")
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/prepare_datasets.jl")
+```
+
+```{julia}
+dataset_dir = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/bank.csv"
+df = CSV.read(dataset_dir, DataFrame)
+```
+
+```{julia}
+x, y, encoders = preprocess_dataset(df, label_col=:y)
+```
+
+function preprocess_dataset(df::DataFrame; label_col::Union{Symbol, Int, Nothing}=nothing, pad_value::Float32=0f0)

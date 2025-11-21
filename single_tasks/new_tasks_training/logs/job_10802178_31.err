@@ -1,0 +1,19 @@
+  Activating project at `/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/env_nethive_multiverse`
+[ Info: Preparing multi-task setup for datasets: [:car_evaluation]
+┌ Info: Universal dimensions
+│   max_input_dim = 6
+└   max_output_dim = 4
+ERROR: LoadError: UndefVarError: `register_car_evaluation!` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Stacktrace:
+ [1] register_dataset_with_padding!(dataset_name::Symbol, target_input_dim::Int64, target_output_dim::Int64)
+   @ Main /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/loaders.jl:152
+ [2] prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int64)
+   @ Main /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/loaders.jl:55
+ [3] run_single_simulation(config::Dict{String, Any}, output_dir::String, foldername::String; timestamp::Bool, verbose::Bool, save_results::Bool, save_all::Bool)
+   @ Main /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/run_simulation.jl:225
+ [4] main()
+   @ Main /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/run_simulation.jl:322
+ [5] top-level scope
+   @ /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/run_simulation.jl:337
+in expression starting at /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/run_simulation.jl:336

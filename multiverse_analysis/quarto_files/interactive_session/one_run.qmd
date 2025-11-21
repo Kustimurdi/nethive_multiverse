@@ -1,0 +1,275 @@
+```{julia}
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_1_rep_7_2025-11-11_155607"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_173_rep_6_2025-11-12_033816"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_83_rep_10_2025-11-11_213348"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_107_rep_10_2025-11-11_231533"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_119_rep_10_2025-11-11_235413"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_100_rep_10_2025-11-11_224519"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_60_rep_10_2025-11-11_195930"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_4t4n1000e10r_sweep/data/param_57_rep_10_2025-11-12_142035"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_4_rep_1_2025-11-17_123315"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_16_rep_1_2025-11-17_123236"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_14_rep_1_2025-11-17_123327"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_15_rep_1_2025-11-17_123337"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_18_rep_1_2025-11-17_123256"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_6_rep_1_2025-11-17_123407"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_42_rep_1_2025-11-17_123244"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_60_rep_1_2025-11-17_125847"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10svhn210000e_sweep/data/param_22_rep_1_2025-11-17_143404"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10svhn210000e_sweep/data/param_3_rep_1_2025-11-17_143438"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10svhn210000e_sweep/data/param_2_rep_1_2025-11-17_143403"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10svhn210000e_sweep/data/param_22_rep_1_2025-11-17_143404"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/single_tasks/new_tasks_training/data/param_1_rep_1_2025-11-17_173229"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/single_tasks/new_tasks_training/data/param_45_rep_1_2025-11-17_180424"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/mnist_fashion_mnist/data/param_22_rep_1_2025-11-18_154343"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/6t6b_runs/test/data/param_1_rep_1_2025-11-18_180115"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/deadtime_sanity_check/data/param_1_rep_1_2025-11-17_122514"
+```
+
+# Alternatively, scan for specific run
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/mnist_fashion_mnist"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/6t6b_runs/6t6b_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t3b_runs/cifar10_svhn2_mnist_3b"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/bank_wdbc"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t4b/mnist_fmnist_cifar10"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/4t4b/mnist_fmnist_cifar10_svhn2"
+data_path = joinpath(folder_path, "data/")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+filter_df = filter(row -> row.learning_rate == 1.0e-5, master_df)
+#filter_df = filter(row -> row.learning_rate == 0.0005, master_df)
+#filter_df = filter(row -> row.dataset_names == "[\"bank\"]", filter_df)
+filter_df = filter(row -> row.interaction_rate == 10.0, filter_df)
+filter_df = filter(row -> row.lambda_sensitivity == 100, filter_df)
+filter_df = filter(row -> row.dead_time == 100, filter_df)
+#filter_df = filter(row -> row.punish_rate == 1.0e-5, filter_df)
+filter_df = filter(row -> row.batches_per_step == 50, filter_df)
+println("nrow $(nrow(filter_df))")
+run_path = filter_df.run_path[1]
+```
+
+# load data
+
+```{julia}
+event_log = load_log(run_path)
+config = load_config(joinpath(run_path, "config.json"))
+mapping = load_task_index_mapping(run_path)
+```
+
+# filter the data
+
+```{julia}
+log = filter(row -> ...)
+```
+
+# plot one bee for one task
+
+```{julia}
+bee_id = 1
+task_id = 1
+filtered_log = filter(row -> row.bee1_id == bee_id, event_log)
+fig = Makie.Figure(size=(1200, 400))
+ax = Makie.Axis(fig[1,1], xlabel = "Time", ylabel = "Accuracy", title="Evolution of Accuracy for Bee $bee_id for task $task_id")
+colname = Symbol("task_$task_id")
+ydata = filtered_log[!, colname]
+Makie.lines!(ax, filtered_log.time, ydata, linewidth=2)
+display(fig)
+```
+
+# plot all tasks for one bee
+
+```{julia}
+bee_id = 1
+fig = plot_bee_all_tasks(log, bee_id, mapping=mapping)
+display(fig)
+```
+
+
+# plot all tasks for one bee stacked
+ 
+```{julia}
+linewidth=4
+markersize=8
+n_bees = length(unique(event_log.bee1_id))
+fig = Makie.Figure(resolution=(1200, 400*n_bees))
+add_legend = true
+for (i, bee) in enumerate(1:n_bees)
+    println("bee: $bee")
+    ax = Makie.Axis(fig[i,1], xlabel="time", ylabel="accuracy", title="Evolution of Accuracy for Bee $bee Across All Tasks")
+    plot_bee_all_tasks(event_log, bee, ax=ax, mapping=mapping, add_legend=add_legend, linewidth=linewidth, markersize=markersize) 
+    add_legend = false
+end
+display(fig)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+
+save(joinpath(save_path, "all_tasks_one_bee_stacked_$(basename(run_path)).png"), fig)
+save(joinpath(save_path, "all_tasks_one_bee_stacked_$(basename(run_path)).pdf"), fig)
+```
+
+# plot all bees for one task
+
+```{julia}
+task_id = 1
+fig = plot_task_all_bees(log, task_id, mapping=mapping)
+display(fig)
+```
+
+# plot all bees for one task stacked
+ 
+```{julia}
+n_tasks = length(unique(log.task_id))
+fig = Makie.Figure(resolution=(1200, 400*n_tasks))
+add_legend = true
+for (i, task) in enumerate(1:n_tasks)
+    ax = Makie.Axis(fig[i,1], xlabel="time", ylabel="accuracy", title="Evolution of Accuracy for Task $task across all Bees")
+    plot_task_all_bees(log, task, ax=ax, mapping=mapping, add_legend=add_legend) 
+end
+display(fig)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+
+save(joinpath(save_path, "all_bees_one_task_stacked_$(basename(run_path)).png"), fig)
+save(joinpath(save_path, "all_bees_one_task_stacked_$(basename(run_path)).pdf"), fig)
+```
+
+# plot best performance for one task over all bees
+
+```{julia}
+task_id = 1
+fig = Makie.Figure(size=(1200, 400))
+ax = Makie.Axis(fig[1,1], xlabel="time", ylabel="accuracy", title="Best performance of task $task_id")
+plot_best_performance_of_task(log, task_id, ax=ax)
+display(fig)
+```
+
+# plot best performance of all tasks over all bees
+
+```{julia}
+fig = Makie.Figure(size=(1200, 400))
+ax = Makie.Axis(fig[1,1], xlabel="time", ylabel="accuracy", title="Best performance")
+n_tasks = length(unique(log.task_id))
+base = Makie.wong_colors()
+colors = [ base[mod1(i, length(base))] for i in 1:n_tasks ]   # n = number of tasks/bees
+println(n_tasks)
+for (i, task) in enumerate(1:n_tasks)
+    plot_best_performance_of_task(log, task, ax=ax, color=colors[i])
+end
+display(fig)
+```
+
+# Basic counts and rates
+
+```{julia}
+using DataFrames
+
+# per-bee (bee1_id)
+per_bee = combine(groupby(log, :bee1_id)) do sub
+    n_events = nrow(sub)
+    n_training = sum(sub.bee1_id .== sub.bee2_id)
+    n_suppression = sum(sub.bee1_id .!= sub.bee2_id)
+    (n_events = n_events, n_training = n_training, n_suppression = n_suppression)
+end
+
+# per-task
+per_task = combine(groupby(log, :task_id)) do sub
+    n_events = nrow(sub)
+    n_training = sum(sub.bee1_id .== sub.bee2_id)
+    n_suppression = sum(sub.bee1_id .!= sub.bee2_id)
+    (n_events = n_events, n_training = n_training, n_suppression = n_suppression)
+end
+```
+
+```{julia}
+fig = Figure()
+ax1 = Makie.Axis(fig[1,1], title="number of training events per bee")
+ax2 = Makie.Axis(fig[1,2], title="number of suppression events per bee")
+barplot!(ax1, per_bee.bee1_id, per_bee.n_training)
+barplot!(ax2, per_bee.bee1_id, per_bee.n_suppression)
+display(fig)
+```
+
+```{julia}
+fig = Figure()
+ax1 = Makie.Axis(fig[1,1], title="number of training events per task")
+ax2 = Makie.Axis(fig[1,2], title="number of suppression events per task")
+barplot!(ax1, per_task.task_id, per_task.n_training)
+barplot!(ax2, per_task.task_id, per_task.n_suppression)
+display(fig)
+```
+
+# summary 
+
+```{julia}
+summary = run_summary(log)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{julia}
+
+
+
+
+
+# Time series
+
+```{julia}
+#using DataFrames, Makie
+
+window = 1.0
+log.win = floor.(log.time ./ window) .* window   # group key
+bywin = combine(groupby(log, :win)) do sub 
+    n_epoch = nrow(sub)
+    n_training = sum(sub.bee1_id .== sub.bee2_id)
+end
+# cumulative:
+sort!(log, :time)
+log.cum_events = 1:nrow(log)
+#Makie.lines!(ax, bywin.win, bywin.n_events) (window counts)
+#Makie.lines!(ax, log.time, log.cum_events) (cumulative)
+
+```
+
+
+```{julia}
+filtered_log = filter(row -> row.time > 600.0, log)
+filtered_log = filter(row -> row.time < 700.0, log)
+```
+
+
+```{julia}
+show(filtered_log, allrows=true)
+```

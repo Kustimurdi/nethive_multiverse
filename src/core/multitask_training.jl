@@ -99,9 +99,11 @@ function calc_classification_accuracy(model, dataloader; num_batches::Int=typema
     for (x_batch, y_batch) in Iterators.take(dataloader, num_batches)
         # Get predicted class indices (highest output)
         preds = Flux.onecold(model(x_batch))
+        #println("preds: , $preds")
         
         # Get true class indices from one-hot encoding
         truths = Flux.onecold(y_batch)
+        #println("truths: $truths")
         
         correct += sum(preds .== truths)
         total += length(truths)

@@ -1,0 +1,90 @@
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep"
+```
+
+```{julia}
+summaries = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
+```
+
+```{julia}
+master_df = build_master_dataframe(joinpath(folder_path, "data"))
+```
+
+```{julia}
+f_sum = copy(summaries)
+```
+
+# filtering the data
+
+```{julia}
+f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
+f_sum = filter(row -> row.learning_rate == 0.0001, f_sum)
+#f_sum = filter(row -> row.dead_time == 5.0, f_sum)
+```
+
+# aggregating the data
+
+```{julia}
+xcol = "dead_time"
+ycol = "interaction_rate"
+metric_col = :coverage_fraction
+groupcols = [Symbol(xcol), Symbol(ycol)]
+agg = combine(groupby(f_sum, groupcols),
+              metric_col => mean => :mean_coverage,
+              metric_col => std  => :std_coverage,
+              metric_col => length => :coverage_count,
+              :p_end_mean => mean => :mean_score)
+
+sort!(agg, groupcols)
+```
+
+# prepare data for the heatmap
+
+```{julia}
+xcol = Symbol(xcol)
+ycol = Symbol(ycol)
+#valcol = :mean_coverage
+valcol = :mean_score
+
+xs = sort(unique(agg[:, xcol]))
+ys = sort(unique(agg[:, ycol]))
+xi = Dict(v => i for (i,v) in enumerate(xs))
+yi = Dict(v => i for (i,v) in enumerate(ys))
+
+mat = fill(NaN, length(xs), length(ys))
+for r in eachrow(agg)
+    mat[xi[r[xcol]], yi[r[ycol]]] = r[valcol]
+end
+```
+
+```{julia}
+fig = Figure(resolution=(800,600))
+ax = Axis(fig[1, 1], xlabel=string(ycol), ylabel=string(xcol))
+hm = heatmap!(ax, ys, xs, mat; colormap = :viridis)   # note: (x=cols, y=rows) -> ys, xs
+Colorbar(fig[1,2], hm)
+```
+
+```{julia}
+fig = Figure(resolution=(800,600))
+ax = Axis(fig[1,1], xlabel = string(xcol), ylabel = string(ycol))
+
+# draw on integer grid and keep the mapping via tick labels
+# plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
+ax.xticks = (1:length(xs), string.(xs))
+ax.yticks = (1:length(ys), string.(ys))
+
+Colorbar(fig[1,2], hm)
+```
+
+```{julia}
+display(fig)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "heatmap_score_dt5ls100.pdf"), fig)
+

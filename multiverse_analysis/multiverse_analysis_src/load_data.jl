@@ -40,11 +40,28 @@ function load_config(config_path::String)
         obj = obj["base_config"]  # Use nested config from Slurm manager
     end
     
-    row = Dict(Symbol(k) => v for (k, v) in pairs(obj))
+    # Ensure that any non-scalar (arrays, objects) are converted to compact JSON
+    # strings so the resulting DataFrame is a single-row table rather than
+    # expanding array-valued fields into multiple rows.
+    function scalarize_config_value(v)
+        try
+            if isa(v, AbstractVector) || isa(v, Dict) || isa(v, JSON3.Array) || isa(v, JSON3.Object)
+                return JSON3.write(v)
+            else
+                return v
+            end
+        catch
+            return v
+        end
+    end
+
+    row = Dict(Symbol(k) => scalarize_config_value(v) for (k, v) in pairs(obj))
 
     cfg_df = DataFrame([row])
     return cfg_df
 end
+
+# row = Dict(Symbol(k) => v for (k, v) in pairs(obj))
 
 function load_states(states_path::String)
     # Load states CSV and normalize column names for analysis compatibility
@@ -76,14 +93,15 @@ function load_events(events_path::String)
     return events
 end
 
-function load_losses(losses_path::String)
+function load_log(run_path::String)
     # Load losses CSV (optional file)
-    if !isfile(losses_path)
-        @warn "Losses file not found: $losses_path. Returning empty DataFrame."
+    log_path = joinpath(run_path, "event_log.csv")
+    if !isfile(log_path)
+        @warn "Log file not found: $log_path. Returning empty DataFrame."
         return DataFrame()
     end
-    losses = CSV.read(losses_path, DataFrame)
-    return losses
+    log = CSV.read(log_path, DataFrame)
+    return log
 end
 
 function load_run(run_path::String; load_all::Bool=false)
@@ -92,8 +110,8 @@ function load_run(run_path::String; load_all::Bool=false)
     states = load_states(joinpath(run_path, "states.csv"))
     events = load_events(joinpath(run_path, "events.csv"))
     if load_all
-        losses = load_losses(joinpath(run_path, "losses.csv"))
-        return (run_path=run_path, config=cfg, states=states, events=events, losses=losses)
+        log = load_log(joinpath(run_path, "event_log.csv"))
+        return (run_path=run_path, config=cfg, states=states, events=events, log=log)
     end
     
     return (run_path=run_path, config=cfg, states=states, events=events)
@@ -168,4 +186,26 @@ function load_run_component(run_path::String, component::Symbol)
     else
         error("Unknown component: $component")
     end
+end
+
+function load_task_index_mapping(run_path::String)
+    mapping_path = joinpath(run_path, "task_index_mapping.json")
+    # Load task index to name mapping from CSV
+    if !isfile(mapping_path)
+        error("Mapping file not found: $mapping_path")
+    end
+    txt = read(mapping_path, String)
+    obj = JSON3.read(txt)
+    mapping = Dict{Any,String}()
+    for (k, v) in pairs(obj)
+        # Keys coming from JSON may be strings or symbols; normalize safely
+        ks = String(k)
+        ki = tryparse(Int, ks)
+        if ki !== nothing
+            mapping[ki] = String(v)
+        else
+            mapping[ks] = String(v)
+        end
+    end
+    return mapping
 end

@@ -1,0 +1,70 @@
+```{julia}
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/single_tasks/mnist_learning_rate_sweep/data/param_1_rep_1_2025-11-04_130235"
+states = load_states(joinpath(run_path, "states.csv"))
+
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/single_tasks/new_tasks_training"
+data_path = joinpath(folder_path, "data/")
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+unique(master_df.dataset_names)
+filter_df = filter(row -> row.dataset_names == "[\"iris\"]", master_df)
+```
+
+```{julia}
+logs = []
+lrs = []
+for row in eachrow(filter_df)
+    log = load_log(row.run_path)
+    push!(lrs, row.learning_rate)
+    push!(logs, log)
+end
+```
+
+```{julia}
+fig = Figure(size=(1200, 400))
+ax = Axis(fig[1,1], xlabel="time", ylabel="accuracy")
+base = Makie.wong_colors()
+colors = [ base[mod1(i, length(base))] for i in 1:length(logs) ]
+for i in 1:length(logs)
+    lines!(ax, logs[i].time, logs[i].task_1, label="lr: $(lrs[i])")
+    println(logs[i])
+end
+axislegend(ax, position = :rb)
+ax.xgridvisible = true
+ax.ygridvisible = true
+display(fig)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "acc_evolution_$(filter_df.dataset_names[1]).png"))
+save(joinpath(save_path, "acc_evolution_$(filter_df.dataset_names[1]).pdf"))
+```
+
+```{julia}
+bee_id = 1
+bee_states = filter(row -> row.bee_id == 1, states)
+fig = Figure(size=(800, 600))
+ax = Axis(fig[1,1], xlabel="epoch")
+Makie.lines!(ax, bee_states.epoch, bee_states.task_value)
+```
+
+```{julia}
+save(joinpath(run_path, "one_bee_mnist.pdf"), fig)
+```
+
+
+```{julia}
+time_diffs = diff(training_df.time)
+f = Figure()
+hist(f[1, 1], time_diffs, bins = 50)
+f
+```

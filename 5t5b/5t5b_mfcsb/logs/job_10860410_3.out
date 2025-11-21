@@ -1,0 +1,1193 @@
+Job array started at: Fri Nov 21 03:32:02 PM CET 2025
+Job ID: 10860416
+Array Job ID: 10860410
+Array Task ID: 3
+Node: th-ws-970r04
+Loading Julia module...
+Module loaded: /software/opt/el_9/x86_64/julia/1.11.3/bin/julia
+Changing to project directory...
+Current directory: /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse
+Running parameter combination 3, replicate 1
+Starting Julia simulation...
+Running simulation with the following configuration:
+  dataset_names: [:mnist, :cifar10, :svhn2, :fashion_mnist, :bank]
+  param_id: 3
+  n_bees: 5
+  batch_size: 32
+  replicate_id: 1
+  punish_rate: 0.1
+  punishment: time_out
+  lambda_sensitivity: 10
+  save_nn_epochs: 0
+  production_rate: 1
+  interaction_rate: 10
+  batches_per_step: 50
+  learning_rate: 1.0e-6
+  max_output_dim: 10
+  n_steps_per_epoch: 1
+  dead_time: 100
+  max_input_dim: 3072
+  n_epochs: 1000
+  seed: 1130008042
+
+Starting simulation with configuration:
+  dataset_names: [:mnist, :cifar10, :svhn2, :fashion_mnist, :bank]
+  param_id: 3
+  n_bees: 5
+  batch_size: 32
+  replicate_id: 1
+  punish_rate: 0.1
+  punishment: time_out
+  lambda_sensitivity: 10
+  save_nn_epochs: 0
+  production_rate: 1
+  interaction_rate: 10
+  batches_per_step: 50
+  run_timestamp: 2025-11-21T15:32:42.443
+  learning_rate: 1.0e-6
+  max_output_dim: 10
+  n_steps_per_epoch: 1
+  dead_time: 100
+  max_input_dim: 3072
+  n_epochs: 1000
+  seed: 1130008042
+Random seed: 1130008042
+
+Starting simulation...
+Time: 1.1, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 3.44, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 3.44, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 6.02, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 6.02, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 6.02, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 7.82, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 8.07, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 9.51, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 10.07, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 11.04, 
+            Production Events: 4, 
+            Suppression Events: 0
+Time: 12.91, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 17.08, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 17.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 17.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 17.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 17.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 22.4, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 22.4, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 22.4, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 22.4, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 22.4, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 25.34, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 25.34, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 25.34, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 27.54, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 27.54, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 28.26, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 29.28, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 30.76, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 32.74, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 32.74, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 33.29, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 34.71, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 35.67, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 37.34, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 37.34, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 39.13, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 39.13, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 41.16, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 41.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 43.0, 
+            Production Events: 3, 
+            Suppression Events: 1
+Time: 43.0, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 44.85, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 45.09, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 47.04, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 47.04, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 50.36, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 50.36, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 50.36, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 51.17, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 53.1, 
+            Production Events: 2, 
+            Suppression Events: 1
+Time: 53.1, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 56.61, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 56.61, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 56.61, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 57.09, 
+            Production Events: 2, 
+            Suppression Events: 1
+Time: 60.15, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 60.15, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 60.15, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 61.05, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 62.22, 
+            Production Events: 3, 
+            Suppression Events: 2
+Time: 63.67, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 64.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 66.56, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 66.56, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 68.38, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 68.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 70.59, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 70.59, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 72.49, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 72.49, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 73.15, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 76.53, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 76.53, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 76.53, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 78.22, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 78.22, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 81.37, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 81.37, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 81.37, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 82.13, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 84.8, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 84.8, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 86.19, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 86.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 87.63, 
+            Production Events: 2, 
+            Suppression Events: 1
+Time: 88.03, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 89.22, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 91.49, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 91.49, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 92.95, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 94.9, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 94.9, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 96.41, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 96.41, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 97.03, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 99.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 99.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 100.57, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 102.08, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 102.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 104.47, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 104.47, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 105.78, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 107.53, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 107.53, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 108.02, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 109.42, 
+            Production Events: 2, 
+            Suppression Events: 1
+Time: 110.07, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 112.08, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 112.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 117.97, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 117.97, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 117.97, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 117.97, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 117.97, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 118.55, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 119.27, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 120.09, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 121.28, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 122.46, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 123.62, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 124.31, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 125.07, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 126.3, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 128.59, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 128.59, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 129.52, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 130.4, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 131.63, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 132.07, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 133.23, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 134.88, 
+            Production Events: 2, 
+            Suppression Events: 2
+Time: 136.02, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 136.02, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 137.07, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 138.72, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 140.68, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 140.68, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 141.41, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 142.51, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 143.53, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 144.25, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 145.86, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 146.39, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 147.04, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 150.28, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 150.28, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 150.28, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 151.77, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 152.34, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 155.77, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 155.77, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 155.77, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 156.6, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 157.32, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 158.26, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 159.22, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 160.14, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 162.77, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 162.77, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 163.86, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 164.45, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 165.1, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 167.28, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 167.28, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 168.31, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 170.74, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 170.74, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 171.21, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 172.32, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 174.03, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 174.03, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 175.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 176.34, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 177.05, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 178.61, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 180.88, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 180.88, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 183.19, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 183.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 183.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 184.41, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 189.01, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 189.01, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 189.01, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 189.01, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 189.01, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 190.09, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 191.93, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 192.09, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 194.35, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 194.35, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 195.79, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 196.04, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 197.1, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 198.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 199.76, 
+            Production Events: 2, 
+            Suppression Events: 2
+Time: 201.73, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 201.73, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 205.6, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 205.6, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 205.6, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 205.6, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 206.41, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 207.33, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 208.85, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 209.2, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 211.75, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 211.75, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 213.09, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 213.09, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 215.61, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 215.61, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 221.38, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 222.58, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 223.24, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 224.52, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 225.66, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 227.7, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 227.7, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 228.14, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 229.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 230.1, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 234.17, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 234.17, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 234.17, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 234.17, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 235.3, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 236.74, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 237.59, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 240.52, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 240.52, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 240.52, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 241.66, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 242.85, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 243.02, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 245.45, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 245.45, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 246.2, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 247.27, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 248.49, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 249.15, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 251.02, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 251.02, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 252.96, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 254.69, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 254.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 255.21, 
+            Production Events: 0, 
+            Suppression Events: 5
+Time: 256.15, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 257.13, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 261.05, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 261.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 261.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 261.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 262.28, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 264.59, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 264.59, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 265.29, 
+            Production Events: 1, 
+            Suppression Events: 4
+Time: 266.02, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 272.69, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 275.19, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 275.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 275.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 278.05, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 278.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 278.05, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 279.61, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 280.39, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 281.93, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 282.52, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 286.99, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 286.99, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 286.99, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 286.99, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 287.79, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 288.36, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 290.68, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 290.68, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 291.96, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 292.06, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 293.65, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 294.39, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 297.78, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 297.78, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 297.78, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 298.37, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 304.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 306.63, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 306.63, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 307.29, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 308.82, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 310.3, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 310.3, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 313.18, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 313.18, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 313.18, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 314.31, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 316.72, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 316.72, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 317.61, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 318.33, 
+            Production Events: 1, 
+            Suppression Events: 1
+Time: 319.7, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 320.25, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 321.63, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 323.81, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 323.81, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 325.56, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 325.56, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 326.04, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 327.01, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 328.75, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 329.58, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 331.16, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 331.16, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 332.44, 
+            Production Events: 1, 
+            Suppression Events: 2
+Time: 333.35, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 335.32, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 335.32, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 336.32, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 338.19, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 338.19, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 339.34, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 341.18, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 341.18, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 342.01, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 346.39, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 346.39, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 346.39, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 346.39, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 347.73, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 348.5, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 349.13, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 350.51, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 352.08, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 352.08, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 354.07, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 354.07, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 357.25, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 357.25, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 357.25, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 359.11, 
+            Production Events: 1, 
+            Suppression Events: 4
+Time: 359.11, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 360.82, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 362.29, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 362.29, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 363.67, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 364.55, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 365.92, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 366.73, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 367.95, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 368.24, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 369.76, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 370.07, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 371.77, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 372.24, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 373.19, 
+            Production Events: 0, 
+            Suppression Events: 1
+Time: 374.36, 
+            Production Events: 0, 
+            Suppression Events: 2
+Time: 375.26, 
+            Production Events: 2, 
+            Suppression Events: 1
+Time: 377.35, 
+            Production Events: 0, 
+            Suppression Events: 3
+Time: 377.35, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 379.28, 
+            Production Events: 0, 
+            Suppression Events: 4
+Time: 379.28, 
+            Production Events: 0, 
+            Suppression Events: 0

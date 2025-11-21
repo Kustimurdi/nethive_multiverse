@@ -1,11 +1,12 @@
 {
     "base_config": {
         "n_bees": 5,
-        "dataset_names": ["mnist", "fashion_mnist"],
+        "dataset_names": ["mnist", "fashion_mnist", "bank", "wdbc", "iris", "car_evaluation"],
         "n_epochs": 10,
         "n_steps_per_epoch": 5,
         "learning_rate": 0.01,
         "punish_rate": 0.1,
+        "punishment": "time_out",
         "batch_size": 32,
         "batches_per_step": 500,
         "dead_time": 2,

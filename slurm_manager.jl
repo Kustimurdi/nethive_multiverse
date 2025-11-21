@@ -51,11 +51,11 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "05:30:00"
+            default = "10:30:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
-            default = 12
+            default = 24
         "--cpus"
             help = "CPUs per job"
             arg_type = Int
@@ -81,6 +81,20 @@ function parse_slurm_args()
             default = nothing
         "--use-array"
             help = "Use job arrays instead of individual jobs"
+            action = :store_true
+        "--julia-module"
+            help = "Module name or module/version to load (e.g. julia/1.11.3). If empty, uses 'module load julia'"
+            arg_type = String
+            default = "julia/1.11.3"
+        "--julia-exec"
+            help = "Julia executable to invoke in the job script (default: julia)"
+            arg_type = String
+            default = "julia"
+        "--precompile-on-start"
+            help = "Run Pkg.instantiate() and Pkg.precompile() at job start (useful with per-job depot)"
+            action = :store_true
+        "--per-job-depot"
+            help = "Use a per-job JULIA_DEPOT_PATH to avoid shared-depot precompilation contention"
             action = :store_true
     end
     
@@ -188,7 +202,7 @@ function validate_and_update_config(config::Dict)
     return config
 end
 
-function generate_parameter_combinations(sweep_config::Dict)
+function generate_parameter_combinations_old(sweep_config::Dict)
     """Generate all parameter combinations from sweep configuration"""
     base_config = sweep_config["base_config"]
     sweep_params = sweep_config["sweep_parameters"]
@@ -200,7 +214,7 @@ function generate_parameter_combinations(sweep_config::Dict)
     # Generate all combinations
     combinations = []
     
-    function generate_recursive(current_combo, remaining_params, remaining_values)
+    function generate_recursive_old(current_combo, remaining_params, remaining_values)
         if isempty(remaining_params)
             push!(combinations, copy(current_combo))
             return
@@ -215,12 +229,51 @@ function generate_parameter_combinations(sweep_config::Dict)
         end
     end
     
-    generate_recursive(copy(base_config), param_names, param_values)
+    generate_recursive_old(copy(base_config), param_names, param_values)
     
     return combinations
 end
 
-function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String)
+function generate_parameter_combinations(sweep_config::Dict)
+    """Generate all parameter combinations from sweep configuration"""
+    # Work with flexible Any-typed dicts to avoid type conversion errors
+    base_config_raw = sweep_config["base_config"]
+    sweep_params_raw = get(sweep_config, "sweep_parameters", Dict())
+
+    base_config = Dict{String,Any}()
+    for (k,v) in base_config_raw
+        base_config[String(k)] = v
+    end
+
+    sweep_params = Dict{String,Any}()
+    for (k,v) in sweep_params_raw
+        sweep_params[String(k)] = v
+    end
+
+    param_names = collect(keys(sweep_params))
+    param_values = [ collect(sweep_params[name]) for name in param_names ]
+
+    combinations = Vector{Dict{String,Any}}()
+
+    function generate_recursive(current_combo::Dict{String,Any}, remaining_params, remaining_values)
+        if isempty(remaining_params)
+            push!(combinations, deepcopy(current_combo))
+            return
+        end
+        param = remaining_params[1]
+        values = remaining_values[1]
+        for value in values
+            new_combo = deepcopy(current_combo)
+            new_combo[param] = value
+            generate_recursive(new_combo, remaining_params[2:end], remaining_values[2:end])
+        end
+    end
+
+    generate_recursive(deepcopy(base_config), param_names, param_values)
+    return combinations
+end
+
+function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String, args::Dict)
     """Create a Slurm job script for a single parameter combination"""
     
     script_path = joinpath(output_dir, "scripts", "job_$(job_id).slurm")
@@ -252,7 +305,12 @@ function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String)
 
         write(io, "\n# Load modules (required for cluster compatibility)\n")
         write(io, "echo \"Loading Julia module...\"\n")
-        write(io, "module load julia\n")
+        julia_module = get(args, "julia-module", "")
+        if julia_module != ""
+            write(io, "module load $(julia_module)\n")
+        else
+            write(io, "module load julia\n")
+        end
         write(io, "echo \"Module loaded: \$(which julia)\"\n")
 
         write(io, "\n# Change to project directory\n")
@@ -262,6 +320,29 @@ function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String)
         
         write(io, "\n# Set Julia project environment\n")
         write(io, "export JULIA_PROJECT=./env_nethive_multiverse\n")
+
+        # Optionally use a per-job depot to avoid shared-depot precompilation contention
+        if get(args, "per-job-depot", false)
+            write(io, "\n# Use per-job JULIA_DEPOT_PATH to reduce shared-depot locking/contention\n")
+            # Build export line using Char(36) so we never include a literal $ in the Julia source
+            write(io, "export JULIA_DEPOT_PATH=\"")
+            write(io, string(Char(36)))
+            write(io, "{SCRATCH:-/scratch}/")
+            write(io, string(Char(36)))
+            write(io, "USER/julia_depot/")
+            write(io, string(Char(36)))
+            write(io, "SLURM_JOB_ID\"\n")
+            write(io, "mkdir -p \"")
+            write(io, string(Char(36)))
+            write(io, "JULIA_DEPOT_PATH\"\n")
+        end
+
+        # Optionally instantiate+precompile at job start
+        if get(args, "precompile-on-start", false)
+            write(io, "\n# Instantiate and precompile packages for project (may download artifacts)\n")
+            write(io, "echo \"Instantiating and precompiling packages...\"\n")
+            write(io, "$(get(args, "julia-exec", "julia")) --project=./env_nethive_multiverse -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'\n")
+        end
 
         write(io, "\n# Run simulation\n")
         
@@ -275,7 +356,8 @@ function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String)
         
         # Run simulation using the working pattern
         write(io, "echo \"Starting Julia simulation...\"\n")
-        write(io, "julia run_simulation.jl --config $(config_path) --output-dir $(output_dir)/data --base-name $(job_base_name) --timestamp --verbose --save-results\n")
+        julia_exec = get(args, "julia-exec", "julia")
+        write(io, "$(julia_exec) run_simulation.jl --config $(config_path) --output-dir $(output_dir)/data --base-name $(job_base_name) --timestamp --verbose --save-results\n")
         
         write(io, "\necho \"Job finished at: \$(date)\"\n")
     end
@@ -345,7 +427,12 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         
         write(io, "\n# Load modules (required for cluster compatibility)\n")
         write(io, "echo \"Loading Julia module...\"\n")
-        write(io, "module load julia\n")
+        julia_module = get(args, "julia-module", "")
+        if julia_module != ""
+            write(io, "module load $(julia_module)\n")
+        else
+            write(io, "module load julia\n")
+        end
         write(io, "echo \"Module loaded: \$(which julia)\"\n")
         
         write(io, "\n# Change to project directory\n")
@@ -355,6 +442,26 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         
         write(io, "\n# Set Julia project environment\n")
         write(io, "export JULIA_PROJECT=./env_nethive_multiverse\n")
+
+        if get(args, "per-job-depot", false)
+            write(io, "\n# Use per-job JULIA_DEPOT_PATH to reduce shared-depot locking/contention\n")
+            write(io, "export JULIA_DEPOT_PATH=\"")
+            write(io, string(Char(36)))
+            write(io, "{SCRATCH:-/scratch}/")
+            write(io, string(Char(36)))
+            write(io, "USER/julia_depot/")
+            write(io, string(Char(36)))
+            write(io, "SLURM_JOB_ID\"\n")
+            write(io, "mkdir -p \"")
+            write(io, string(Char(36)))
+            write(io, "JULIA_DEPOT_PATH\"\n")
+        end
+
+        if get(args, "precompile-on-start", false)
+            write(io, "\n# Instantiate and precompile packages for project (may download artifacts)\n")
+            write(io, "echo \"Instantiating and precompiling packages...\"\n")
+            write(io, "$(get(args, "julia-exec", "julia")) --project=./env_nethive_multiverse -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'\n")
+        end
         
         write(io, "\n# Configuration mapping based on array task ID\n")
         write(io, "case \$SLURM_ARRAY_TASK_ID in\n")
@@ -380,7 +487,8 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         
         write(io, "\n# Run simulation\n")
         write(io, "echo \"Starting Julia simulation...\"\n")
-        write(io, "julia run_simulation.jl --config \$CONFIG_FILE --output-dir $(output_dir)/data --base-name \$BASE_NAME --timestamp --verbose --save-results\n")
+        julia_exec = get(args, "julia-exec", "julia")
+        write(io, "$(julia_exec) run_simulation.jl --config \$CONFIG_FILE --output-dir $(output_dir)/data --base-name \$BASE_NAME --timestamp --verbose --save-results\n")
         
         write(io, "\necho \"Job finished at: \$(date)\"\n")
     end
@@ -512,7 +620,7 @@ function generate_jobs(sweep_config::Dict, args::Dict)
                 "replicate_id" => config["replicate_id"]
             )
             
-            script_path = create_slurm_script(job_config, i, output_dir)
+            script_path = create_slurm_script(job_config, i, output_dir, args)
             push!(script_paths, script_path)
         end
         

@@ -95,7 +95,12 @@ function calculate_universal_dimensions(dataset_names::Vector{Symbol})
         :fashion_mnist => (input_dim=784, n_classes=10),  # 28*28 = 784
         :cifar10 => (input_dim=3072, n_classes=10),       # 32*32*3 = 3072
         :cifar100 => (input_dim=3072, n_classes=100),     # 32*32*3 = 3072
-        :svhn2 => (input_dim=3072, n_classes=10)          # 32*32*3 = 3072
+        :svhn2 => (input_dim=3072, n_classes=10),         # 32*32*3 = 3072
+        :bank => (input_dim=53, n_classes=2),             # Bank marketing tabular (default)
+        :wdbc => (input_dim=30, n_classes=2),             # Wisconsin Diagnostic Breast Cancer
+        :iris => (input_dim=4, n_classes=3),              # Iris dataset
+        :car_evaluation => (input_dim=6, n_classes=4),    # Car Evaluation dataset
+        :wineq_red => (input_dim=11, n_classes=6)
     )
     
     max_input_dim = 0
@@ -137,6 +142,16 @@ function register_dataset_with_padding!(dataset_name::Symbol, target_input_dim::
         return register_cifar10!(target_input_dim, target_output_dim)
     elseif dataset_name == :svhn2
         return register_svhn2!(target_input_dim, target_output_dim)
+    elseif dataset_name == :bank
+        return register_bank!(target_input_dim, target_output_dim)
+    elseif dataset_name == :wdbc
+        return register_wdbc!(target_input_dim, target_output_dim)
+    elseif dataset_name == :iris
+        return register_iris!(target_input_dim, target_output_dim)
+    elseif dataset_name == :car_evaluation
+        return register_car_eval!(target_input_dim, target_output_dim)
+    elseif dataset_name == :wineq_red
+        return register_wineq_red!(target_input_dim, target_output_dim)
     else
         throw(ArgumentError("Unknown dataset: $dataset_name"))
     end
@@ -167,13 +182,19 @@ model2 = model_template()  # Another fresh model (different weights)
 function create_universal_model_template(input_dim::Int, output_dim::Int)
     function model_template()
         # Universal architecture that works for all classification tasks
-        hidden_dim1 = min(128, input_dim ÷ 4)  # Adaptive hidden size
-        hidden_dim2 = min(64, hidden_dim1 ÷ 2)
+        hidden_dim1 = max(128, input_dim ÷ 4)  # Adaptive hidden size
+        hidden_dim2 = max(64, hidden_dim1 ÷ 2)
         
         return Chain(
-            Dense(input_dim, hidden_dim1, relu),
-            Dense(hidden_dim1, hidden_dim2, relu),
+            Dense(input_dim, hidden_dim1),
+            BatchNorm(hidden_dim1, relu),
+            Dense(hidden_dim1, hidden_dim2),
+            BatchNorm(hidden_dim2, relu),
             Dense(hidden_dim2, output_dim)  # No activation (logits for cross-entropy)
+
+            #Dense(input_dim, hidden_dim1, relu),
+            #Dense(hidden_dim1, hidden_dim2, relu),
+            #Dense(hidden_dim2, output_dim)  # No activation (logits for cross-entropy)
         )
     end
     

@@ -1,0 +1,62 @@
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/gradient_ascend_4t4n1000e10r_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10svhn210000e_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/single_tasks/new_tasks_training"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/mnist_fashion_mnist"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t4b/mnist_fmnist_cifar10"
+data_path = joinpath(folder_path, "data/")
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+summary_df = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
+```
+
+```{julia}
+e
+ample_path = master_df.run_path[1]
+log = load_log(example_path)
+config = load_config(joinpath(example_path, "config.json"))
+
+```
+
+```{julia}
+summary = run_summary(log)
+```
+
+# find run via params
+
+```{julia}
+filter_df = filter(row -> row.learning_rate == 1.0e-5, master_df)
+#filter_df = filter(row -> row.learning_rate == 0.0005, master_df)
+#filter_df = filter(row -> row.dataset_names == "[\"bank\"]", filter_df)
+filter_df = filter(row -> row.interaction_rate == 10.0, filter_df)
+filter_df = filter(row -> row.lambda_sensitivity == 100, filter_df)
+filter_df = filter(row -> row.dead_time == 10, filter_df)
+#filter_df = filter(row -> row.punish_rate == 1.0e-5, filter_df)
+println("nrow $(nrow(filter_df))")
+filter_df.run_path[1]
+```
+
+```{julia}
+println(unique(filter_df.learning_rate))
+println(unique(filter_df.interaction_rate))
+println(unique(filter_df.lambda_sensitivity))
+println(unique(filter_df.dead_time))
+println(unique(filter_df.dataset_names))
+println(nrow(filter_df))
+filter_df.run_path[1]
+```
+
+# find run via summaries
+
+```{julia}
+max_coverage = maximum(summary_df.coverage_fraction)
+filter_sum = summary_df[summary_df.coverage_fraction .== max_coverage, :]
+run_path = filter_sum.run_path[1]
+```

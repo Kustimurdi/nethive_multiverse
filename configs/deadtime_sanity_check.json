@@ -1,0 +1,21 @@
+{
+    "base_config": {
+        "n_bees": 4,
+        "dataset_names": ["mnist", "fashion_mnist", "cifar10", "svhn2"],
+        "n_epochs": 100,
+        "n_steps_per_epoch": 5,
+        "punish_rate": 0.1,
+        "punishment": "time_out",
+        "batch_size": 32,
+        "batches_per_step": 100,
+        "save_nn_epochs": 0,
+        "seed": null,
+        "learning_rate": 0.0001,
+        "interaction_rate": 1000.0,
+        "dead_time": 500.0
+    },
+    "sweep_parameters": {
+        "lambda_sensitivity": [100.0],
+        "production_rate": [1.0]
+    }
+}

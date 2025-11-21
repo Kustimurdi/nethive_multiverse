@@ -1,0 +1,256 @@
+```{julia}
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/cifar10_svhn2_sweep/data/param_18_rep_1_2025-11-17_123256"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t3b_runs/cifar10_svhn2_mnist_3b/data/param_7_rep_1_2025-11-19_122608"
+```
+
+# load data
+
+```{julia}
+log = load_log(run_path)
+config = load_config(joinpath(run_path, "config.json"))
+mapping = load_task_index_mapping(run_path)
+```
+
+# 2 tasks version
+
+```{julia}
+log1 = filter(row -> row.bee1_id == 1, log)
+log2 = filter(row -> row.bee1_id == 2, log)
+```
+
+```{julia}
+fig = Figure(size=(800, 800))
+ax = Axis(fig[1,1], xlabel="Accuracy of Task 1", ylabel="Accuracy of Task 2")
+Makie.lines!(ax, log1.task_1, log1.task_2, 
+        color = :red, linewidth = 4, label = "Bee 1")
+Makie.lines!(ax, log2.task_1, log2.task_2, 
+        color = :blue, linewidth = 4, label = "Bee 2")
+axislegend(ax, position = :rt)
+display(fig)
+```
+
+```{julia}
+save_path = joinpath(run_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+
+save(joinpath(save_path, "acc_acc_$(basename(run_path)).png"), fig)
+save(joinpath(save_path, "acc_acc_$(basename(run_path)).pdf"), fig)
+```
+
+# 3 tasks
+```{julia}
+log1 = filter(row -> row.bee1_id ==1, log)
+log2 = filter(row -> row.bee1_id ==2, log)
+log3 = filter(row -> row.bee1_id ==3, log)
+```
+
+```{julia}
+fig = Figure()
+az = 0.1
+ax = Axis3(fig[1,1], 
+                xlabel=mapping[1], 
+                ylabel=mapping[2], 
+                zlabel=mapping[3],
+                azimuth=az*pi)
+lines!(ax, log1.task_1, log1.task_2, log1.task_3, linewidth=4, color=:red, label="bee 1")
+lines!(ax, log2.task_1, log2.task_2, log2.task_3, linewidth=4, color=:blue, label="bee 2")
+lines!(ax, log3.task_1, log3.task_2, log3.task_3, linewidth=4, color=:green, label="bee 3")
+axislegend(ax, position = :lt)
+display(fig)
+```
+
+
+```{julia}
+save_path = joinpath(run_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+
+save(joinpath(save_path, "acc_acc_$(basename(run_path))_az_$(az).png"), fig)
+save(joinpath(save_path, "acc_acc_$(basename(run_path))_az_$(az).pdf"), fig)
+```
+
+
+```{julia}
+using GLMakie
+
+# data: log1/2/3 contain columns task_1, task_2, task_3 (vectors)
+fig = Figure(resolution=(1200,600), backgroundcolor = RGBf0(0.98, 0.98, 1.0))
+
+ax = Axis3(fig[1,1],
+           xlabel = mapping[1],
+           ylabel = mapping[2],
+           zlabel = mapping[3])
+
+# thicker semi-transparent lines
+lines!(ax, log1.task_1, log1.task_2, log1.task_3; linewidth=4, color=RGBAf0(0.8,0.1,0.1,0.9), label="bee 1")
+lines!(ax, log2.task_1, log2.task_2, log2.task_3; linewidth=4, color=RGBAf0(0.1,0.2,0.8,0.9), label="bee 2")
+lines!(ax, log3.task_1, log3.task_2, log3.task_3; linewidth=4, color=RGBAf0(0.1,0.7,0.2,0.9), label="bee 3")
+
+# mark start (circle) and end (cross) for each bee
+scatter!(ax, [first(log1.task_1)], [first(log1.task_2)], [first(log1.task_3)]; markersize=12, color=:red)
+scatter!(ax, [last(log1.task_1)],  [last(log1.task_2)],  [last(log1.task_3)];  markersize=10, marker = :x, color=:red)
+
+scatter!(ax, [first(log2.task_1)], [first(log2.task_2)], [first(log2.task_3)]; markersize=12, color=:blue)
+scatter!(ax, [last(log2.task_1)],  [last(log2.task_2)],  [last(log2.task_3)];  markersize=10, marker = :x, color=:blue)
+
+scatter!(ax, [first(log3.task_1)], [first(log3.task_2)], [first(log3.task_3)]; markersize=12, color=:green)
+scatter!(ax, [last(log3.task_1)],  [last(log3.task_2)],  [last(log3.task_3)];  markersize=10, marker = :x, color=:green)
+
+# legend and grids
+axislegend(ax, position = :lt)
+ax.xgridvisible = true
+ax.ygridvisible = true
+ax.zgridvisible = true
+
+# nicer initial camera (eye position, lookat)
+# tweak the Vec3f0 numbers to get a pleasing angle for your data
+cam3d!(ax.scene, Vec3f0(3, -4, 2), Vec3f0(mean(vcat(log1.task_1, log2.task_1, log3.task_1)),
+                                             mean(vcat(log1.task_2, log2.task_2, log3.task_2)),
+                                             mean(vcat(log1.task_3, log2.task_3, log3.task_3))))
+
+display(fig)
+```
+
+```{julia}
+using CairoMakie, ColorSchemes, Colors
+
+# --- data placeholders ---
+ x1,y1,z1 = log1.task_1, log1.task_2, log1.task_3
+ x2,y2,z2 = log2.task_1, log2.task_2, log2.task_3
+ x3,y3,z3 = log3.task_1, log3.task_2, log3.task_3
+
+# Choose sizes for vector (PDF) and raster (PNG)
+paper_width_px = 1200   # base pixel width for PNG; PDF is vector so size doesn't matter
+paper_height_px = 800
+hires_factor = 2        # produce PNG at 2× pixels for high DPI
+
+fig = Figure(resolution = (paper_width_px, paper_height_px), fontsize = 16,
+             backgroundcolor = RGB(1,1,1))
+
+ax = Axis3(fig[1,1],
+           xlabel = mapping[1], ylabel = mapping[2], zlabel = mapping[3],
+           title = "Bee trajectories (3D)",
+           perspectiveness = 0.5)
+
+# line styles: slightly thicker, semi-opaque for overlap visibility
+lines!(ax, x1, y1, z1; linewidth = 3.0, color = RGBA(0.85,0.2,0.2,0.95), label = "bee 1")
+lines!(ax, x2, y2, z2; linewidth = 3.0, color = RGBA(0.15,0.35,0.85,0.95), label = "bee 2")
+lines!(ax, x3, y3, z3; linewidth = 3.0, color = RGBA(0.1,0.7,0.2,0.95), label = "bee 3")
+
+# mark starts and ends for clarity
+scatter!(ax, [first(x1)], [first(y1)], [first(z1)]; markersize=10, color=:red)
+scatter!(ax, [last(x1)],  [last(y1)],  [last(z1)];  markersize=8, marker=:x, color=:red)
+
+# repeat for others...
+axislegend(ax, position = :rt)   # right top
+ax.xgridvisible = true
+ax.ygridvisible = true
+ax.zgridvisible = true
+
+# set a pleasing camera (tweak if needed)
+cx = mean([mean(x1), mean(x2), mean(x3)])
+cy = -mean([mean(y1), mean(y2), mean(y3)])
+cz = mean([mean(z1), mean(z2), mean(z3)])
+
+cam3d!(ax.scene; eyeposition = Vec3(3.0, -4.0, 2.0), lookat = Vec3(cx, cy, cz))
+```
+
+```{julia}
+# Suppose x1,y1,z1 etc. exist; combine all points to compute extents
+xs = vcat(x1, x2, x3)
+ys = vcat(y1, y2, y3)
+zs = vcat(z1, z2, z3)
+
+xmin, xmax = minimum(xs), maximum(xs)
+ymin, ymax = minimum(ys), maximum(ys)
+zmin, zmax = minimum(zs), maximum(zs)
+
+center = Vec3((xmin+xmax)/2, (ymin+ymax)/2, (zmin+zmax)/2)
+half_ranges = ((xmax-xmin)/2, (ymax-ymin)/2, (zmax-zmin)/2)
+r = 1.5 * maximum(half_ranges)   # radius: 1.5× largest half-range
+```
+
+```{julia}
+# az, el in degrees -> radians
+deg2rad(θ) = θ * (pi/180)
+
+function eye_from_azel(center::Vec3, r::Float64, az_deg::Real, el_deg::Real)
+    az = deg2rad(az_deg)
+    el = deg2rad(el_deg)
+    x = r * cos(az) * cos(el)
+    y = r * sin(az) * cos(el)
+    z = r * sin(el)
+    return center + Vec3(x, y, z)
+end
+
+# Example: set camera to azimuth= -45°, elevation = 20°
+
+eye = eye_from_azel(center, r, -180, 20)
+cam3d!(ax.scene; eyeposition = eye, lookat = center)   # recommended keyword form
+display(fig)
+```
+
+```{julia}
+# compute center (where camera looks)
+center = Vec3(mean([mean(x1), mean(x2), mean(x3)]),
+              mean([mean(y1), mean(y2), mean(y3)]),
+              mean([mean(z1), mean(z2), mean(z3)]))
+
+# current eyeposition (example)
+eye = Vec3(3.0f0, -4.0f0, 2.0f0)
+
+# rotate vec = eye - center by +90° around Z
+v = eye - center
+# +90°: (x,y) -> (-y, x)
+v_rot = Vec3(-v[2], v[1], v[3])
+
+# set camera
+cam3d!(ax.scene; eyeposition = center + v_rot, lookat = center)
+
+display(fig)  # update view
+```
+
+```{julia}
+function rotate_around_axis(vec::Vec3, axis::Symbol, θ::Real)
+    c = cos(θ); s = sin(θ)
+    x,y,z = vec
+    if axis == :z
+        return Vec3(c*x - s*y, s*x + c*y, z)
+    elseif axis == :x
+        return Vec3(x, c*y - s*z, s*y + c*z)
+    elseif axis == :y
+        return Vec3(c*x + s*z, y, -s*x + c*z)
+    else
+        error("axis must be :x, :y or :z")
+    end
+end
+
+# usage: rotate current eye by 90° around Z
+eye = Vec3(3.0f0, -4.0f0, 2.0f0)
+center = Vec3(mean([mean(x1), mean(x2), mean(x3)]),
+              mean([mean(y1), mean(y2), mean(y3)]),
+              mean([mean(z1), mean(z2), mean(z3)]))
+v = eye - center
+v_rot = rotate_around_axis(v, :z, π/2)
+cam3d!(ax.scene; eyeposition = center + v_rot, lookat = center)
+display(fig)
+```
+
+```{julia}
+# Save vector for publication
+save("bees_3d.pdf", fig)   # vector output
+
+# Save high-resolution PNG (render at higher pixel dims)
+save("bees_3d.png", fig; px = (paper_width_px*hires_factor, paper_height_px*hires_factor))
+# If your Makie version doesn't accept `px=`/keyword, create the figure with the higher resolution
+# fig_hires = Figure(resolution=(paper_width_px*hires_factor, paper_height_px*hires_factor), ...)
+# then draw the same plot into fig_hires and save it with save("bees_3d.png", fig_hires)
+```
+
+```{julia}
+using Colors
+@show RGBf0
+```

@@ -7,7 +7,8 @@
         "batch_size": 32,
         "save_nn_epochs": 0,
         "seed": null,
-        "interaction_rate": 1.0
+        "interaction_rate": 1.0,
+        "punishment": "gradient_ascend"
     },
     "sweep_parameters": {
         "lambda_sensitivity": [1.0, 10.0, 100.0],

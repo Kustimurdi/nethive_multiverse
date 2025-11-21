@@ -77,6 +77,9 @@ function parse_commandline()
         "--punish-rate"
             help = "Punish rate"
             arg_type = Float64
+        "--punishment"
+            help = "Punishment type: resetting, time_out, none, gradient_ascend"
+            arg_type = String
         "--dead-time"
             help = "Dead time for bees"
             arg_type = Float64
@@ -120,6 +123,7 @@ function create_default_config()
         "interaction_rate" => 20,
         "learning_rate" => 0.01,
         "punish_rate" => 0.1,
+        "punishment" => "gradient_ascend",
         "lambda_sensitivity" => 100.0,
         "batch_size" => 32,
         "save_nn_epochs" => 0,
@@ -143,6 +147,7 @@ function merge_config_with_args(config::Dict, args::Dict)
         "production-rate" => "production_rate",
         "interaction-rate" => "interaction_rate",
         "lambda-sensitivity" => "lambda_sensitivity",
+        "punishment" => "punishment",
         "batch-size" => "batch_size",
         "batches-per-step" => "batches_per_step",
         "dead-time" => "dead_time"
@@ -172,6 +177,7 @@ function initialize_hive_from_config(config::Dict, model_template::Function)
         Float64(config["learning_rate"]),
         Float64(config["punish_rate"]),
         Float64(config["lambda_sensitivity"]),
+        Symbol(config["punishment"]),
         config["seed"],
         config["save_nn_epochs"],
         config["batches_per_step"],

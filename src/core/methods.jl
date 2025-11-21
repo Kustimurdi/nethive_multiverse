@@ -1,4 +1,4 @@
-const punishment = :time_out    # options: :resetting, :time_out, :none
+# punishment type is now part of MultiTaskHiveConfig (hive.config.punishment)
 
 function get_production_rates_basic(hive::MultiTaskHive)::Matrix{Float64}
     """
@@ -87,12 +87,13 @@ end
 function collect_all_rates(hive::MultiTaskHive)
     # Get all rate matrices
     production_rates = nothing
-    if punishment == :resetting || punishment == :none || punishment == :gradient_ascend
+    pun = hive.config.punishment
+    if pun == :resetting || pun == :none || pun == :gradient_ascend
         production_rates = get_production_rates_basic(hive)
-    elseif punishment == :time_out
+    elseif pun == :time_out
         production_rates = get_production_rates_time_out(hive)
     else
-        error("Unknown punishment type: $punishment")
+        error("Unknown punishment type: $pun")
     end
     interaction_rates = get_interaction_rates(hive.queen_genes, hive.config.interaction_rate, hive.config.lambda_sensitivity)
     
@@ -120,8 +121,8 @@ function collect_all_rates(hive::MultiTaskHive)
         end
     end
     
-    println("sum of production rates: $(sum(production_rates))")
-    println("sum of interaction rates: $(sum(interaction_rates))")
+    #println("sum of production rates: $(sum(production_rates))")
+    #println("sum of interaction rates: $(sum(interaction_rates))")
     
     return rates, actions
 end
@@ -138,9 +139,9 @@ function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
         
     elseif type == :suppress
         # bee2 (source) suppresses bee1's (target) task
-        println("Bee $bee2 suppresses Bee $bee1 on Task $task at time $(hive.current_time)")
-        println("accuracy of bee1 before suppression: $(hive.queen_genes[bee1, task])")
-        println("accuracy of bee2 before suppression: $(hive.queen_genes[bee2, task])")
+        #println("Bee $bee2 suppresses Bee $bee1 on Task $task at time $(hive.current_time)")
+        #println("accuracy of bee1 before suppression: $(hive.queen_genes[bee1, task])")
+        #println("accuracy of bee2 before suppression: $(hive.queen_genes[bee2, task])")
         perform_suppression!(hive, bee1, bee2, task, loaders)
     else
         error("Unknown action type: $type")
@@ -159,9 +160,9 @@ function release_tasks!(suppressed_tasks::Array, suppression_starting_times::Arr
     suppressed_tasks[suppressed_tasks .& ((current_time .- suppression_starting_times) .>= dead_time)] .= false
     
     if any(old_suppressed_tasks .!= suppressed_tasks)
-        println("Released tasks at time $current_time")
-        println("Old suppressed tasks:\n$old_suppressed_tasks")
-        println("New suppressed tasks:\n$suppressed_tasks")
+        #println("Released tasks at time $current_time")
+        #println("Old suppressed tasks:\n$old_suppressed_tasks")
+        #println("New suppressed tasks:\n$suppressed_tasks")
     end
 
     return nothing
@@ -173,18 +174,19 @@ function perform_suppression!(hive::MultiTaskHive, bee_idx::Int, partner_bee_idx
     
     This function updates the hive state to reflect the interaction.
     """
-    if punishment == :none
+    pun = hive.config.punishment
+    if pun == :none
         # No action taken
         return nothing
-    elseif punishment == :resetting
+    elseif pun == :resetting
         perform_resetting!(hive, bee_idx)
-    elseif punishment == :time_out
+    elseif pun == :time_out
         perform_time_out!(hive, bee_idx, task_idx)
-    elseif punishment == :gradient_ascend
+    elseif pun == :gradient_ascend
         # Not implemented yet
         perform_gradient_ascend!(hive, bee_idx, task_idx, loaders)
     else
-        error("Unknown punishment type: $punishment")
+        error("Unknown punishment type: $pun")
     end
     #perform_resetting!(hive, bee_idx)
 
@@ -285,7 +287,7 @@ function advance_gillespie_time!(hive::MultiTaskHive, total_rate::Float64)
 end
 
 function gillespie_step!(hive::MultiTaskHive, loaders::Dict)
-    println("time for a gillespie step at time $(hive.current_time)")
+    #println("time for a gillespie step at time $(hive.current_time)")
     # Step 1: Collect all possible actions and their rates
     rates, actions = collect_all_rates(hive)
     
@@ -318,6 +320,10 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
     log = GillespieEventLog()
 
     update_all_bees!(hive, loaders)
+    for b in 1:hive.n_bees
+        Main.push_event!(log, 0.0, b, 0, 0, hive.queen_genes[b, :])
+    end
+
     performance_history[1, :, :] .= hive.queen_genes
     loss_history[1, :, :] .= hive.losses
 
@@ -332,10 +338,10 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
             document_event!(selected_action, epoch, production_count, suppression_count)
             log_events(log, hive, selected_action)
 
-            println("action executed: $(selected_action)")
-            println("current accuracies: $(hive.queen_genes)")
-            println("current suppressed tasks: $(hive.suppressed_tasks)")
-            println()
+            #println("action executed: $(selected_action)")
+            #println("current accuracies: $(hive.queen_genes)")
+            #println("current suppressed tasks: $(hive.suppressed_tasks)")
+            #println()
 
         end
 
@@ -360,7 +366,7 @@ end
 
 function log_events(log::GillespieEventLog, hive::MultiTaskHive, action)
     bee_accs = hive.queen_genes[action.bee1, :]
-    push_event!(log, hive.current_time, action.bee1, action.bee2, action.task, bee_accs)
+    Main.push_event!(log, hive.current_time, action.bee1, action.bee2, action.task, bee_accs)
 end
 
 function document_event!(action, epoch::Int, production_count::Array, suppression_count::Array)

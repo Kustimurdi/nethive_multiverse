@@ -58,6 +58,7 @@ struct MultiTaskHiveConfig
     learning_rate::Float64
     punish_rate::Float64
     lambda_sensitivity::Float64
+    punishment::Symbol
     random_seed::Int
     save_nn_epochs::Int
     batches_per_step::Union{Int, Nothing}
@@ -75,6 +76,7 @@ struct MultiTaskHiveConfig
                                 learning_rate::Float64,
                                 punish_rate::Float64,
                                 lambda_sensitivity::Float64,
+                                punishment::Symbol,
                                 random_seed::Int,
                                 save_nn_epochs::Int,
                                 batches_per_step::Union{Int, Nothing},
@@ -93,9 +95,16 @@ struct MultiTaskHiveConfig
         if punish_rate <= 0
             throw(ArgumentError("Punish rate must be positive"))
         end
+
         if production_rate <= 0 || interaction_rate < 0
             throw(ArgumentError("Production and interaction rates must be non-negative"))
         end
+        # Validate punishment option
+        valid_punishments = (:resetting, :time_out, :none, :gradient_ascend)
+        if !(punishment in valid_punishments)
+            throw(ArgumentError("Invalid punishment type: $punishment. Valid options: $(valid_punishments)"))
+        end
+
         if lambda_sensitivity < 0
             throw(ArgumentError("Lambda sensitivity must be non-negative"))
         end
@@ -130,6 +139,7 @@ struct MultiTaskHiveConfig
                 learning_rate,
                 punish_rate,
                 lambda_sensitivity,
+                punishment,
                 random_seed,
                 save_nn_epochs,
                 batches_per_step,
@@ -172,6 +182,7 @@ function create_multitask_hive_config(dataset_names::Vector{Symbol},
                                     interaction_rate::Float64=0.5,
                                     learning_rate::Float64=0.001,
                                     punish_rate::Float64=0.01,
+                                    punishment::Symbol = :gradient_ascend,
                                     lambda_sensitivity::Float64=1.0,
                                     random_seed::Int=42,
                                     save_nn_epochs::Int=10,
@@ -216,6 +227,7 @@ function create_multitask_hive_config(dataset_names::Vector{Symbol},
         interaction_rate,
         Float32(learning_rate),
         Float32(punish_rate),
+        punishment,
         Float16(lambda_sensitivity),
         random_seed,
         save_nn_epochs,

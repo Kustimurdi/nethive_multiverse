@@ -1,0 +1,119 @@
+```{julia}
+using Pkg
+#Pkg.activate("./env_nethive_multiverse/")
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/env_nethive_multiverse")
+#Pkg.instantiate()
+```
+
+```{julia}
+# Load packages directly (they should be available via JULIA_PROJECT)
+using ArgParse
+using CSV
+using DataFrames
+using Flux
+using JSON3
+using MLDatasets
+using Random
+using Statistics
+using Dates
+```
+
+```{julia}
+# Load our modules
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/loaders.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/definitions.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/multitask_training.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/methods.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/save_data.jl")
+```
+
+```{julia}
+#dataset = register_wdbc!()
+#dataset = register_bank!()
+#dataset = register_iris!()
+#dataset = register_car_eval!()
+#dataset = register_wineq_red!()
+#dataset = register_mnist!()
+#dataset = register_wineq_white!()
+#dataset = register_dropout!()
+dataset = register_abalone!()
+trainl, testl = create_loaders(dataset)
+
+function create_loaders_direct(train_x, train_y, test_x, test_y; batch_size::Int=32, shuffle_train::Bool=true)
+    # Create proper Flux DataLoaders
+    train_loader = Flux.DataLoader(
+        (train_x, train_y), 
+        batchsize=batch_size, 
+        shuffle=shuffle_train
+    )
+    
+    test_loader = Flux.DataLoader(
+        (test_x, test_y), 
+        batchsize=batch_size, 
+        shuffle=false  # Don't shuffle test data
+    )
+    
+    return train_loader, test_loader
+end
+
+```
+
+```{julia}
+m = mean(dataset.train_data[1], dims=2)
+stand_dev = Statistics.std(dataset.train_data[1], dims=2)
+norm_dataset = deepcopy(dataset)
+z = (dataset.train_data[1] .- m) ./ stand_dev
+train_normed = (z, dataset.train_data[2])
+```
+
+```{julia}
+test = dataset.test_data[1]
+row_mean = mean(test, dims=2)
+row_std = std(test, dims=2)
+z = (test .- row_mean) ./ row_std
+test_normed = (z, dataset.test_data[2])
+```
+
+```{julia}
+train = dataset.train_data[1]
+test = dataset.test_data[1]
+row_min_train = minimum(train, dims=2)
+row_min_test = minimum(test, dims=2)
+row_max_train = maximum(train, dims=2)
+row_max_test = maximum(test, dims=2)
+
+scaled_train = (train .- row_min_train) ./ (row_max_train .- row_min_train)
+scaled_test = (test .- row_min_test) ./ (row_max_test .- row_min_test)
+
+train_normed = (scaled_train, dataset.train_data[2])
+test_normed = (scaled_test, dataset.test_data[2])
+```
+
+```{julia}
+trainl, testl = create_loaders_direct(train_normed[1], train_normed[2], test_normed[1], test_normed[2])
+```
+
+```{julia}
+model_template = create_universal_model_template(dataset.padded_input_dim, dataset.padded_output_dim)
+model = model_template()
+```
+
+```{julia}
+n_epochs = 100
+lr = 0.00001
+nbatches = 100
+init_acc = calc_classification_accuracy(model, testl, num_batches=nbatches)
+println("init acc: $init_acc")
+old_model = deepcopy(model)
+for e in 1:n_epochs
+    loss = train_model!(model, trainl, learning_rate=lr)
+    acc = calc_classification_accuracy(model, testl, num_batches=nbatches)
+    println("acc: $acc --- loss: $loss --- epoch: $e")
+    #println(model == old_model)
+    #old_model = deepcopy(model)
+end
+```
+
+```{julia}
+wq = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality/winequality-red.csv", DataFrame)
+```

@@ -1,0 +1,34 @@
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/timeout/timeout_4t4n_deadtime_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/"
+data_path = joinpath(folder_path, "data")
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_1_rep_1_2025-11-11_155635"
+```
+
+# building the master dataframe and filtering it
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+config = load_config(joinpath(run_path, "config.json"))
+lr = config.learning_rate
+dt = config.dead_time
+ls = config.lambda_sensitivity
+ir = config.interaction_rate
+filtered_master = filter(row -> row.lambda_sensitivity == ls && 
+                                #row.learning_rate == lr &&
+                                #row.interaction_rate == ir &&
+                                #row.dead_time == dt,
+                                master_df)
+```
+
+```{julia}
+filtered_master = filter(row ->
+    #row.lambda_sensitivity == ls &&
+    #row.learning_rate        == lr &&
+    #row.interaction_rate     == ir &&
+    row.dead_time            == 0.1,
+    master_df)
+```

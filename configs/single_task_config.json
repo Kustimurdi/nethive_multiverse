@@ -1,18 +1,21 @@
 {
     "base_config": {
-        "n_bees": 10,
-        "dataset_names": ["mnist"],
-        "n_epochs": 30,
+        "n_bees": 1,
+        "dataset_names": ["svhn2"],
+        "n_epochs": 500,
         "n_steps_per_epoch": 5,
-        "learning_rate": 0.01,
         "punish_rate": 0.1,
+        "punishment": "resetting",
         "batch_size": 32,
+        "batches_per_step": 32,
         "save_nn_epochs": 0,
         "seed": null,
-        "interaction_rate": 1.0
+        "production_rate": 1.0,
+        "interaction_rate": 1.0,
+        "dead_time": 1.0
     },
     "sweep_parameters": {
-        "lambda_sensitivity": [1.0, 10.0, 100.0],
-        "production_rate": [0.1, 1.0, 10.0, 100.0]
+        "lambda_sensitivity": [1.0],
+        "learning_rate": [0.000001, 0.000005, 0.00001, 0.00005,0.0001, 0.0005]
     }
 }

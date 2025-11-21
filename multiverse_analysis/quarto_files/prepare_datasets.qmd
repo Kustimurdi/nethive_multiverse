@@ -12,27 +12,108 @@ using JSON3
 using MLDatasets
 using Random
 using Statistics
-using Dates
+using CategoricalArrays
 
-# Load our modules
-include("src/data/loaders.jl")
-include("src/core/definitions.jl")
-include("src/core/multitask_training.jl")
-include("src/core/methods.jl")
-include("src/core/save_data.jl")
 ```
-
 ```{julia}
+# Load our modules
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/prepare_datasets.jl")
 ```
 
 ```{julia}
-dataset_dir = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/bank.csv"
-df = CSV.read(dataset_dir, DataFrame)
+using JLD2
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/"
+#dataset_dir = joinpath(dataset_path, "bank-full.csv")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/breast_cancer"
+#dataset_dir = joinpath(dataset_path, "wdbc.data")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/iris"
+#dataset_dir = joinpath(dataset_path, "iris.data")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/car_evaluation/"
+#dataset_dir = joinpath(dataset_path, "car.data")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/paddy/"
+#dataset_dir = joinpath(dataset_path, "paddydataset.csv")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/student_dropout/"
+#dataset_dir = joinpath(dataset_path, "data.csv")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality"
+#dataset_dir = joinpath(dataset_path, "winequality-white.csv")
+#dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/student_dropout"
+#dataset_dir = joinpath(dataset_path, "data.csv")
+dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/abalone"
+dataset_dir = joinpath(dataset_path, "abalone.data")
+df = CSV.read(dataset_dir, DataFrame; header=false)
+#df = CSV.read(dataset_dir, DataFrame)
+```
+```{julia}
+#labels = getproperty(df, :"Paddy yield(in Kg)")
+labels = df[:, end]
+features = df[:, 1:end-1]
+#labels = df[:, 1]
+#features = df[:, 2:end]
+#labels = df.Target
+#features = df[!, Not(:Target)]
 ```
 
 ```{julia}
-x, y, encoders = preprocess_dataset(df, label_col=:y)
+x, y, encoders = preprocess_dataset(features)
 ```
 
+```{julia}
+labels, onehot_labels, classes = encode_labels(labels)
+```
+
+```{julia}
+
+file_name = "abalone.jld2"
+file_path = joinpath(dataset_path, file_name)
+features = x'
+@save file_path features onehot_labels labels
+```
+
+```{julia}
+data = Dict()
+jldopen(file_path, "r") do f
+    for k in keys(f)
+        data[string(k)] = read(f, k)
+    end
+end
+#@load file_path x_t onehotlabels
+```
+
+```{julia}
+loader = Flux.DataLoader((x', labels), batchsize=32)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function encode_labels(labels::AbstractVector; classes::Union{AbstractVector, Nothing}=nothing, return_onehot::Bool=true)
 function preprocess_dataset(df::DataFrame; label_col::Union{Symbol, Int, Nothing}=nothing, pad_value::Float32=0f0)
+df = prepare_bank_marketing("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/")
+directory_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing"
+bank_df = CSV.read(joinpath(directory_path, "bank.csv"), DataFrame)
+bank_full_df = CSV.read(joinpath(directory_path, "bank-full.csv"), DataFrame)
+
+x, y, enc = preprocess_dataset(bank_df, label_col=:y)
+x_full, y_full, enc_full = preprocess_dataset(bank_full_df, label_col=:y)
+
+y, classes = encode_labels(bank_df.y)
+
+using MLDatasets
+MLDatasets.MNIST

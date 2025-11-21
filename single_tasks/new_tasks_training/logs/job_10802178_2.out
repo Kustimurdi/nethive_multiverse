@@ -1,0 +1,1110 @@
+Job array started at: Mon Nov 17 05:33:18 PM CET 2025
+Job ID: 10802192
+Array Job ID: 10802178
+Array Task ID: 2
+Node: th-ws-740m35
+Loading Julia module...
+Module loaded: /software/opt/el_9/x86_64/julia/1.11.3/bin/julia
+Changing to project directory...
+Current directory: /scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse
+Running parameter combination 2, replicate 1
+Starting Julia simulation...
+Running simulation with the following configuration:
+  dataset_names: [:wdbc]
+  param_id: 2
+  n_bees: 1
+  batch_size: 32
+  replicate_id: 1
+  punishment: time_out
+  lambda_sensitivity: 1
+  punish_rate: 0.1
+  save_nn_epochs: 0
+  production_rate: 1
+  interaction_rate: 1
+  batches_per_step: 32
+  learning_rate: 0.0005
+  max_output_dim: 2
+  n_steps_per_epoch: 1
+  dead_time: 1
+  max_input_dim: 30
+  n_epochs: 100
+  seed: 677867647
+
+Starting simulation with configuration:
+  dataset_names: [:wdbc]
+  param_id: 2
+  n_bees: 1
+  batch_size: 32
+  replicate_id: 1
+  punishment: time_out
+  lambda_sensitivity: 1
+  punish_rate: 0.1
+  save_nn_epochs: 0
+  production_rate: 1
+  interaction_rate: 1
+  batches_per_step: 32
+  run_timestamp: 2025-11-17T17:33:44.228
+  learning_rate: 0.0005
+  max_output_dim: 2
+  n_steps_per_epoch: 1
+  dead_time: 1
+  max_input_dim: 30
+  n_epochs: 100
+  seed: 677867647
+Random seed: 677867647
+
+Starting simulation...
+time for a gillespie step at time 0.0
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 0.6588605161367164
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 1.01, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 1.0144752066116596
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 2.48, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 2.4833682146083067
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 2.6243328190582877
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 3.87, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 3.8678579228533407
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 4.24, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 4.243163775125588
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 4.928051357815907
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 7.22, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 7.22, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 7.22, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 7.223951654725003
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.3739130434782609;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 7.234725904717681
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8173913043478261;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 11.32, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 11.32, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 11.32, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 11.32, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 11.318861507458042
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8695652173913043;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 12.12, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 12.121852099158883
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 12.607144866132998
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8695652173913043;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 13.98, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 13.976794495962167
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8695652173913043;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 16.83, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 16.83, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 16.83, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 16.82903136612298
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8695652173913043;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 18.68, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 18.68, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 18.67522517296772
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 18.900123269544125
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8521739130434782;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 18.920172649286467
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 19.26, 
+            Production Events: 3, 
+            Suppression Events: 0
+time for a gillespie step at time 19.259160561121956
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 20.72, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 20.721407339418636
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 20.771401177823893
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 20.950899071282862
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 21.75, 
+            Production Events: 3, 
+            Suppression Events: 0
+time for a gillespie step at time 21.751468563768196
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 22.61, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 22.61443434884925
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 22.963798505111797
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 23.93, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 23.933226725130712
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 24.23, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 24.2293712466342
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 27.71, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 27.71, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 27.71, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 27.714835922423354
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 27.77258984463614
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 30.29, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 30.29, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 30.29, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 30.292484002983144
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 33.35, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 33.35, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 33.35, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 33.34843934897606
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 33.86031561345294
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 34.28, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 34.27565234359127
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 34.90523902915844
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 35.49, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 35.492519966901384
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 36.7, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 36.69922950589792
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 37.43, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 37.426908383459825
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 38.48, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 38.483580986301114
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 40.56, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 40.56, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 40.55816366884129
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 41.07, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 41.06806261060404
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 41.454224142192444
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 43.55, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 43.55, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 43.55182456892178
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 43.63695546835138
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 43.68170355154608
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 45.0, 
+            Production Events: 3, 
+            Suppression Events: 0
+time for a gillespie step at time 44.99881378867958
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 45.3, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 45.29698261300602
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 45.537581228207365
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 46.29, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 46.29143198003008
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 48.66, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 48.66, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 48.66367943376233
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 48.755477409845
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 48.88475999846663
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 49.93, 
+            Production Events: 3, 
+            Suppression Events: 0
+time for a gillespie step at time 49.93167031497215
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 50.11, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 50.10924141908788
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 50.216787816578766
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 50.614939719673316
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 50.69219004777659
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 51.32, 
+            Production Events: 4, 
+            Suppression Events: 0
+time for a gillespie step at time 51.32106911909215
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 51.9317258661835
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 52.15, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 52.14622758097817
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 52.22499593471685
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 53.34, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 53.34183865428642
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 54.62, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 54.6156126713454
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 57.77, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 57.77, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 57.77, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 57.76642701110369
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 58.24, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 58.236767196718446
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8782608695652174;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 58.43617248581973
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 60.0, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 60.0, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 60.00152741157409
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9217391304347826;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 60.39840505983295
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 60.91279382103088
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 61.6, 
+            Production Events: 3, 
+            Suppression Events: 0
+time for a gillespie step at time 61.598675180566985
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 62.25, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 62.25049770787436
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 62.45867201027798
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 63.3, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 63.303064449323905
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 63.91759999615457
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 64.8, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 64.79688365206087
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 65.13, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 65.12639351542309
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 65.75847196405896
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 65.80535882188722
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9217391304347826;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 67.55, 
+            Production Events: 3, 
+            Suppression Events: 0
+Time: 67.55, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 67.55284006013255
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 67.97945926550479
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 72.5, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 72.5, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 72.5, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 72.5, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 72.5, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 72.49953476749022
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8869565217391304;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 73.19, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 73.19175399923061
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 74.11, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 74.10776628723762
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 75.2, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 75.19844217666046
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9217391304347826;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 76.41, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 76.40625723691635
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 77.31, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 77.3090433423394
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 78.59, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 78.59115696927134
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 79.85, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 79.84604727711996
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 81.32, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 81.32, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 81.32017202797684
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 82.3, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 82.29903673000513
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 82.66006619676648
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 83.45, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 83.45265888637664
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 85.18, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 85.18, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 85.17986907380919
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 85.87434948206761
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 87.61, 
+            Production Events: 2, 
+            Suppression Events: 0
+Time: 87.61, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 87.60928226674832
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 88.4, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 88.40406052396345
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9217391304347826;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 88.40408680935916
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 88.47714533710214
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 88.81841026996473
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 90.84, 
+            Production Events: 4, 
+            Suppression Events: 0
+Time: 90.84, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 90.83577614124904
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+time for a gillespie step at time 90.9961285289148
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 91.93, 
+            Production Events: 2, 
+            Suppression Events: 0
+time for a gillespie step at time 91.93498912313409
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 92.56, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 92.56113025192678
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.8956521739130435;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 97.27, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 97.27, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 97.27, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 97.27, 
+            Production Events: 0, 
+            Suppression Events: 0
+Time: 97.27, 
+            Production Events: 0, 
+            Suppression Events: 0
+time for a gillespie step at time 97.27254414668343
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9130434782608695;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 98.85, 
+            Production Events: 1, 
+            Suppression Events: 0
+time for a gillespie step at time 98.84998867995701
+sum of production rates: 1.0
+sum of interaction rates: 0.0
+action executed: (type = :produce, bee1 = 1, bee2 = 1, task = 1)
+current accuracies: [0.9043478260869565;;]
+current suppressed tasks: Bool[0;;]
+
+Time: 100.95, 
+            Production Events: 1, 
+            Suppression Events: 0
+Time: 100.95, 
+            Production Events: 0, 
+            Suppression Events: 0
+Simulation completed:
+  Final time: 100.95241638771991
+  Total events: 104
+  Wall time: 18.34 seconds
+
+Saving simulation results with clean separation...
+Task evolution saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/states.csv
+Events saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/events.csv
+Saving event log (raw and DataFrame)...
+log DataFrame size: (104, 5)
+short view:
+5×5 DataFrame
+ Row │ time      bee1_id  bee2_id  task_id  task_1
+     │ Float64   Int64    Int64    Int64    Float64
+─────┼───────────────────────────────────────────────
+   1 │ 0.658861        1        1        1  0.373913
+   2 │ 1.01448         1        1        1  0.373913
+   3 │ 2.48337         1        1        1  0.373913
+   4 │ 2.62433         1        1        1  0.373913
+   5 │ 3.86786         1        1        1  0.373913Event log saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/event_log.json
+Event log DataFrame saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/event_log.csv
+Metadata and configuration saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/config.json
+Task index mapping saved to: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344/task_index_mapping.json
+All results saved to directory: single_tasks/new_tasks_training/data/param_2_rep_1_2025-11-17_173344
+Simulation completed successfully!
+Job finished at: Mon Nov 17 05:34:19 PM CET 2025

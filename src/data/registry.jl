@@ -8,6 +8,10 @@ with automatic padding/embedding for universal neural network architectures.
 using MLDatasets
 using Flux
 using Random
+using JLD2
+
+# Helpers for tabular datasets (normalize, stratify split, padding)
+include("split_utils.jl")
 
 # Global dataset registry
 const DATASET_REGISTRY = Dict{Symbol, Any}()
@@ -357,6 +361,561 @@ function register_svhn2!(target_input_dim::Int=3072, target_output_dim::Int=10)
     DATASET_REGISTRY[:cifar10] = dataset
     @info "SVHN2 registered successfully" input_shape=(32, 32, 3) n_classes=10 padded_dim=target_input_dim
     
+    return dataset
+end
+
+
+"""
+    register_bank!(target_input_dim::Int = 53, target_output_dim::Int = 2; p_train::Real = 0.8, seed::Integer = 42)
+
+Register the Bank Marketing dataset stored as a JLD2 file on disk.
+
+Expects a folder at `/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/`
+containing `bank_data.jld2` with at least `features` and `labels` keys. Optionally
+`onehot_labels` may be provided.
+"""
+function register_bank!(target_input_dim::Int = 53, target_output_dim::Int = 2; p_train::Real = 0.8, seed::Integer = 42)
+    if haskey(DATASET_REGISTRY, :bank)
+        @info "Bank Marketing dataset already registered, skipping"
+        return DATASET_REGISTRY[:bank]
+    end
+
+    @info "Registering Bank Marketing dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/"
+    file_path = joinpath(dataset_path, "bank_data.jld2")
+    if !isfile(file_path)
+        error("Expected bank_data.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("bank_data.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :bank,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:bank] = dataset
+    @info "Bank Marketing dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+
+    return dataset
+end
+
+function register_wdbc!(target_input_dim::Int = 30, target_output_dim::Int = 2; p_train::Real = 0.8, seed::Integer = 42)
+    if haskey(DATASET_REGISTRY, :wdbc)
+        @info "WDBC dataset already registered, skipping"
+        return DATASET_REGISTRY[:wdbc]
+    end
+
+    @info "Registering WDBC dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/breast_cancer/"
+    file_path = joinpath(dataset_path, "wdbc.jld2")
+    if !isfile(file_path)
+        error("Expected wdbc.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("wdbc.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :wdbc,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:wdbc] = dataset
+    @info "WDBC dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_iris!(target_input_dim::Int = 4, target_output_dim::Int = 3; p_train::Real = 0.8, seed::Integer = 42)
+    if haskey(DATASET_REGISTRY, :iris)
+        @info "Iris dataset already registered, skipping"
+        return DATASET_REGISTRY[:iris]
+    end
+
+    @info "Registering Iris dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/iris/"
+    file_path = joinpath(dataset_path, "iris.jld2")
+    if !isfile(file_path)
+        error("Expected iris.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("iris.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :iris,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:iris] = dataset
+    @info "Iris dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_car_eval!(target_input_dim::Int = 21, target_output_dim::Int = 4; p_train::Real = 0.8, seed::Integer = 42)
+   if haskey(DATASET_REGISTRY, :car_eval)
+        @info "Car Evaluation dataset already registered, skipping"
+        return DATASET_REGISTRY[:car_eval]
+    end
+
+    @info "Registering Car Evaluation dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/car_evaluation/"
+    file_path = joinpath(dataset_path, "car_eval.jld2")
+    if !isfile(file_path)
+        error("Expected car_eval.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("car_eval.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :car_eval,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:car_eval] = dataset
+    @info "Car Evaluation dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_wineq_red!(target_input_dim::Int = 11, target_output_dim::Int = 6; p_train::Real = 0.8, seed::Integer = 42)
+   if haskey(DATASET_REGISTRY, :wineq_red)
+        @info "Wine quality red dataset already registered, skipping"
+        return DATASET_REGISTRY[:wineq_red]
+    end
+
+    @info "Registering wine quality red dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality/"
+    file_path = joinpath(dataset_path, "wineq_red.jld2")
+    if !isfile(file_path)
+        error("Expected wineq_red.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("wineq_red.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :wineq_red,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:wineq_red] = dataset
+    @info "Wine quality red dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_wineq_white!(target_input_dim::Int = 11, target_output_dim::Int = 7; p_train::Real = 0.8, seed::Integer = 42)
+   if haskey(DATASET_REGISTRY, :wineq_white)
+        @info "Wine quality white dataset already registered, skipping"
+        return DATASET_REGISTRY[:wineq_white]
+    end
+
+    @info "Registering wine quality white dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality/"
+    file_path = joinpath(dataset_path, "wineq_white.jld2")
+    if !isfile(file_path)
+        error("Expected wineq_white.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("wineq_white.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :wineq_white,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:wineq_white] = dataset
+    @info "wine quality white dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_dropout!(target_input_dim::Int = 36, target_output_dim::Int = 3; p_train::Real = 0.8, seed::Integer = 42)
+   if haskey(DATASET_REGISTRY, :dropout)
+        @info "Student dropout dataset already registered, skipping"
+        return DATASET_REGISTRY[:dropout]
+    end
+
+    @info "Registering Student Dropout dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/student_dropout/"
+    file_path = joinpath(dataset_path, "dropout.jld2")
+    if !isfile(file_path)
+        error("Expected dropout.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("dropout.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :dropout,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:dropout] = dataset
+    @info "Student dropout dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
+    return dataset
+end
+
+function register_abalone!(target_input_dim::Int = 10, target_output_dim::Int = 28; p_train::Real = 0.8, seed::Integer = 42)
+   if haskey(DATASET_REGISTRY, :abalone)
+        @info "abalone dataset already registered, skipping"
+        return DATASET_REGISTRY[:]
+    end
+
+    @info "Registering abalone dataset..."
+
+    dataset_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/abalone/"
+    file_path = joinpath(dataset_path, "abalone.jld2")
+    if !isfile(file_path)
+        error("Expected abalone.jld2 at: $file_path")
+    end
+
+    data = Dict{String,Any}()
+    jldopen(file_path, "r") do f
+        for k in keys(f)
+            data[string(k)] = read(f, k)
+        end
+    end
+
+    features = get(data, "features", nothing)
+    labels = get(data, "labels", nothing)
+    onehot_labels = get(data, "onehot_labels", nothing)
+
+    if features === nothing || labels === nothing
+        error("abalone.jld2 must contain at least `features` and `labels` entries")
+    end
+
+    # Normalize features to (n_features, n_samples)
+    X_cols, n_features, n_samples = normalize_features(features)
+
+    # Build labels as indices and one-hot matrix (n_classes x n_samples)
+    y_indices, y_onehot, classes = labels_to_indices_and_onehot(labels, onehot_labels, n_samples)
+
+    # Stratified split indices (by original labels)
+    train_idx, test_idx = stratified_split_indices(y_indices, p_train, seed)
+
+    # Build train/test splits with columns as samples
+    X_train = X_cols[:, train_idx]
+    X_test  = X_cols[:, test_idx]
+    y_train = y_onehot[:, train_idx]
+    y_test  = y_onehot[:, test_idx]
+
+    # Pad input feature dimension to target_input_dim (no trimming)
+    X_train_padded = pad_rows(X_train, target_input_dim; pad_value=0f0)
+    X_test_padded  = pad_rows(X_test,  target_input_dim; pad_value=0f0)
+
+    # Pad output dimension (one-hot rows) to target_output_dim (no trimming)
+    n_classes = length(classes)
+    y_train_padded = pad_rows(y_train, target_output_dim; pad_value=0f0)
+    y_test_padded  = pad_rows(y_test,  target_output_dim; pad_value=0f0)
+
+    dataset = TaskDataset(
+        :abalone,
+        (:tabular,),
+        n_classes,
+        (X_train_padded, y_train_padded),
+        (X_test_padded, y_test_padded),
+        target_input_dim,
+        target_output_dim
+    )
+
+    DATASET_REGISTRY[:abalone] = dataset
+    @info "Student abalone dataset registered successfully" input_shape=(:tabular,) n_classes=n_classes padded_dim=target_input_dim
     return dataset
 end
 

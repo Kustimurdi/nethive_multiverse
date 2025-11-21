@@ -1,18 +1,4 @@
-function prepare_bank_marketing(directory_path::String)
-    df = CSV.read(joinpath(directory_path, "bank.csv"), DataFrame)
-    df_names = names(df)
-    new_df = DataFrame()
-    for name in df_names
-        println("Processing column: $name")
-        println("Type: ", unique(typeof.(df[!, name]))[1])
-        
-        types = unique(typeof.(df[!, name]))
-        println("Unique types in column: ", types)
-    end
-    return df
-end
-
-df = prepare_bank_marketing("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing/")
+using CategoricalArrays
 
 function preprocess_dataset(df::DataFrame; label_col::Union{Symbol, Int, Nothing}=nothing, pad_value::Float32=0f0)
     """
@@ -38,7 +24,7 @@ function preprocess_dataset(df::DataFrame; label_col::Union{Symbol, Int, Nothing
 
     # detect categorical columns and build encoders
     for col in cols
-        if label_col !== nothing && col == label_col
+        if label_col !== nothing && (col == label_col || col == string(label_col))
             continue
         end
         col_sym = Symbol(col)
@@ -169,14 +155,3 @@ function encode_labels(labels::AbstractVector; classes::Union{AbstractVector, No
     end
 end
 
-directory_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/bank_marketing"
-bank_df = CSV.read(joinpath(directory_path, "bank.csv"), DataFrame)
-bank_full_df = CSV.read(joinpath(directory_path, "bank-full.csv"), DataFrame)
-
-x, y, enc = preprocess_dataset(bank_df, label_col=:y)
-x_full, y_full, enc_full = preprocess_dataset(bank_full_df, label_col=:y)
-
-y, classes = encode_labels(bank_df.y)
-
-using MLDatasets
-MLDatasets.MNIST

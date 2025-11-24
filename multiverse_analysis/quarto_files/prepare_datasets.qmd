@@ -1,6 +1,7 @@
 ```{julia}
 using Pkg
-Pkg.activate("./env_nethive_multiverse/")
+#Pkg.activate("./env_nethive_multiverse/")
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/env_nethive_multiverse")
 #Pkg.instantiate()
 
 # Load packages directly (they should be available via JULIA_PROJECT)

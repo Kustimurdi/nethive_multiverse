@@ -13,6 +13,7 @@ using DataFrames
 using Flux
 using JSON3
 using MLDatasets
+using LinearAlgebra
 using Random
 using Statistics
 using Dates
@@ -25,7 +26,10 @@ include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/multitask_training.jl")
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/methods.jl")
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/save_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/synthetic.jl")
 ```
+
+# testing standard datasets
 
 ```{julia}
 #dataset = register_wdbc!()
@@ -36,7 +40,6 @@ include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/
 #dataset = register_mnist!()
 #dataset = register_wineq_white!()
 #dataset = register_dropout!()
-dataset = register_abalone!()
 trainl, testl = create_loaders(dataset)
 
 function create_loaders_direct(train_x, train_y, test_x, test_y; batch_size::Int=32, shuffle_train::Bool=true)
@@ -98,6 +101,30 @@ model_template = create_universal_model_template(dataset.padded_input_dim, datas
 model = model_template()
 ```
 
+# gaussian datasets
+
+```{julia}
+struct TaskConfig
+    n_classes::Int
+    features_dimension::Int
+    n_per_class_train::Int
+    n_per_class_test::Int
+    sampling_gauss_sigma::Float64
+    use_per_class_variance::Bool
+    variance_bounds::Tuple{Float64, Float64}
+    center_generation_bounds::Tuple{Float64, Float64}
+end
+
+conf = TaskConfig(3, 3, 500, 200, 0.0, true, (1.0, 3.0), (1.0, 4.0))
+dataset = create_dataset(conf)
+trainl, testl = create_gauss_loaders(dataset.train_data, dataset.test_data)
+```
+
+```{julia}
+model_template = create_gauss_model_template(conf)
+model = model_template()
+```
+
 ```{julia}
 n_epochs = 100
 lr = 0.00001
@@ -113,6 +140,14 @@ for e in 1:n_epochs
     #old_model = deepcopy(model)
 end
 ```
+
+# gaussian all rotations
+
+```{julia}
+all_tasks = prepare_all_gauss_loaders(conf)
+#function prepare_all_gauss_loaders(config::TaskConfig; batchsize::Int=32, shuffle_train::Bool=true)
+```
+
 
 ```{julia}
 wq = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality/winequality-red.csv", DataFrame)

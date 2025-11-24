@@ -1,0 +1,30 @@
+{
+    "base_config": {
+        "n_bees": 1,
+        "dataset_names": ["blank", "blank"],
+        "n_epochs": 100,
+        "n_steps_per_epoch": 1,
+        "batch_size": 32,
+        "save_nn_epochs": 0,
+        "seed": null,
+        "punish_rate": 0.1,
+        "production_rate": 1.0,
+        "punishment": "time_out",
+        "n_classes": 2,
+        "features_dimension": 3,
+        "n_per_class_train": 500,
+        "n_per_class_test": 200,
+        "n_tasks": 2,
+        "use_gauss": true,
+        "use_per_class_variance": true,
+        "variance_bounds": [1.0, 4.0],
+        "center_generation_bounds": [1.0, 3.0]
+    },
+    "sweep_parameters": {
+        "lambda_sensitivity": [10.0],
+        "interaction_rate": [20.0],
+        "batches_per_step": [50, 100],
+        "learning_rate": [0.000001, 0.00001],
+        "dead_time": [10.0]
+    }
+}

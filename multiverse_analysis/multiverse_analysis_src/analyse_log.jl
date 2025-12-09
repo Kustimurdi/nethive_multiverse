@@ -313,7 +313,7 @@ end
 
 function run_summary(log::DataFrame; task_prefix::String="task_", timecol::Symbol=:time,
                      bee1col::Symbol=:bee1_id, bee2col::Symbol=:bee2_id,
-                     taskidcol::Symbol=:task_id, atol=0.0)
+                     taskidcol::Symbol=:task_id)
     # Basic checks
     if nrow(log) == 0
         error("run_summary: empty log")
@@ -332,68 +332,46 @@ function run_summary(log::DataFrame; task_prefix::String="task_", timecol::Symbo
     n_suppression = n_events - n_training
 
     # duration
-    tmin = minimum(skipmissing(log[!, timecol])); tmax = maximum(skipmissing(log[!, timecol]))
-    duration = float(tmax - tmin)
+    times = collect(skipmissing(log[!, timecol]))
+    if isempty(times)
+        error("run_summary: no non-missing times in column $(timecol)")
+    end
+    duration = float(maximum(times) - minimum(times))
 
     # Best per-task across all bees/time
     per_task_best = compute_per_task_best(log, task_ids; task_prefix=task_prefix)
+    vals_best = [v for v in values(per_task_best) if !isnan(v)]
+    run_score_mean_best_task = isempty(vals_best) ? NaN : mean(vals_best)
 
-    # Primary run score: mean best across tasks
-    run_score_mean_best_task = mean(collect(values(per_task_best)))
-
+    # end-of-run best per task (from last-observed rows per bee)
     per_bee_lastrow = compute_per_bee_lastrow(log; bee1col=bee1col, bee2col=bee2col, timecol=timecol)
     per_task_end_best = compute_per_task_end_best(per_bee_lastrow, task_ids; task_prefix=task_prefix)
-    run_score_mean_best_task_at_end = mean(collect(values(per_task_end_best)))
+    vals_end = [v for v in values(per_task_end_best) if !isnan(v)]
+    run_score_mean_best_task_at_end = isempty(vals_end) ? NaN : mean(vals_end)
     per_task_end_components = deepcopy(per_task_end_best)
-    # compute specialization metrics via helper
-    spec = compute_specialization_metrics(log, task_ids; task_prefix=task_prefix,
-                                          bee1col=bee1col, bee2col=bee2col, timecol=timecol)
-
-    
-
-    # mean task value at interaction: use the task value for bee1 (the actor) at each event
-    # We assume the event row contains the correct task column value for the bee being considered.
-    mean_task_value_at_interaction, task_vals_at_event = compute_task_values_at_events(log; task_prefix=task_prefix, taskidcol=taskidcol)
-
-    # mean gain per training: compute post - pre for the trained task by comparing
-    # each training row's task value (post-event) with the previous row for the same
-    # bee & task (pre-event). This is correct because task values are recorded after events.
-    gains, mean_gain_per_training = compute_training_gains(log; task_prefix=task_prefix,
-                                                           bee1col=bee1col, bee2col=bee2col,
-                                                           taskidcol=taskidcol, timecol=timecol)
-
-    # per-task mean gain (same technique per task)
-    per_task_gains = compute_per_task_gains(log, task_ids; task_prefix=task_prefix,
-                                            bee1col=bee1col, bee2col=bee2col, taskidcol=taskidcol, timecol=timecol)
-
-    ## final mean accuracy: for each task take last observed value across rows and average across tasks
-    #final_accs = Float64[]
-    ## last observed per task = value at row with maximum time
-    #for tid in task_ids
-        #col = Symbol(task_prefix * string(tid))
-        ## get rows where that column not missing
-        #colvals = skipmissing(Float64.(log[!, col]))
-        ## best approximation to end-of-run: take value from row with max time (in case some tasks not present at end)
-        ## find index of last non-missing row for this column
-        #idxs = findall(!ismissing.(log[!, col]))
-        #if isempty(idxs)
-            #push!(final_accs, NaN)
-            #continue
-        #end
-        #lastidx = idxs[argmax(log[idxs, timecol])]
-        #push!(final_accs, float(log[lastidx, col]))
-    #end
-    #final_mean_accuracy = mean(final_accs)
-
-    # per-bee stats
-    n_bees = length(unique(vcat(log[!, bee1col], log[!, bee2col])))
 
     # specialization metrics
     spec = compute_specialization_metrics(log, task_ids; task_prefix=task_prefix,
                                           bee1col=bee1col, bee2col=bee2col, timecol=timecol)
 
-    # compute multiplicative run-quality score using final performance, coverage and total-bee entropy
-    # assume task values are in [0,1] by default; adjust p_min/p_max if different
+    # mean task value at interaction (for the acting bee's task value)
+    mean_task_value_at_interaction, task_vals_at_event = compute_task_values_at_events(log;
+                                                                                       task_prefix=task_prefix,
+                                                                                       taskidcol=taskidcol)
+
+    # gains
+    gains, mean_gain_per_training = compute_training_gains(log; task_prefix=task_prefix,
+                                                           bee1col=bee1col, bee2col=bee2col,
+                                                           taskidcol=taskidcol, timecol=timecol)
+
+    # per-task mean gains
+    per_task_gains = compute_per_task_gains(log, task_ids; task_prefix=task_prefix,
+                                            bee1col=bee1col, bee2col=bee2col, taskidcol=taskidcol, timecol=timecol)
+
+    # per-bee count
+    n_bees = length(unique(vcat(log[!, bee1col], log[!, bee2col])))
+
+    # run-quality score (assumes task values scaled to [0,1] by default)
     p_end = run_score_mean_best_task_at_end
     coverage = spec.coverage_fraction
     entropy_total = spec.assignment_entropy_totalbees
@@ -411,11 +389,8 @@ function run_summary(log::DataFrame; task_prefix::String="task_", timecol::Symbo
         run_mean_task_value_at_interaction = mean_task_value_at_interaction,
         mean_gain_per_training = mean_gain_per_training,
         per_task_mean_gain = per_task_gains,
-        #final_mean_accuracy = final_mean_accuracy,
         run_score_mean_best_task_at_end = run_score_mean_best_task_at_end,
-        per_task_end_components = per_task_end_components
-        ,
-        # specialization / coverage outputs (from compute_specialization_metrics)
+        per_task_end_components = per_task_end_components,
         per_bee_best_task = spec.per_bee_best_task,
         per_bee_spec_score = spec.per_bee_spec_score,
         per_task_top_bee = spec.per_task_top_bee,
@@ -424,26 +399,9 @@ function run_summary(log::DataFrame; task_prefix::String="task_", timecol::Symbo
         assignment_entropy = spec.assignment_entropy,
         assignment_entropy_totalbees = spec.assignment_entropy_totalbees,
         specialization_score_mean = spec.specialization_score_mean,
-        last_known = spec.last_known
-        ,
+        last_known = spec.last_known,
         run_quality_score = run_quality_score,
         run_quality_components = run_quality_components
     )
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

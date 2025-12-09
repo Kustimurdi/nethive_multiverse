@@ -51,11 +51,11 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "5:30:00"
+            default = "2:00:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
-            default = 16
+            default = 8
         "--cpus"
             help = "CPUs per job"
             arg_type = Int
@@ -63,7 +63,7 @@ function parse_slurm_args()
         "--array-max"
             help = "Maximum number of simultaneous array jobs"
             arg_type = Int
-            default = 100
+            default = 200
         "--email"
             help = "Email for job notifications"
             arg_type = String

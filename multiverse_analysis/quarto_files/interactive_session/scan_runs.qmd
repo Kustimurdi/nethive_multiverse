@@ -6,6 +6,7 @@
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/single_tasks/new_tasks_training"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/mnist_fashion_mnist"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t4b/mnist_fmnist_cifar10"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/3b3t10c/"
 data_path = joinpath(folder_path, "data/")
 ```
 
@@ -18,8 +19,7 @@ summary_df = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
 ```
 
 ```{julia}
-e
-ample_path = master_df.run_path[1]
+example_path = master_df.run_path[1]
 log = load_log(example_path)
 config = load_config(joinpath(example_path, "config.json"))
 

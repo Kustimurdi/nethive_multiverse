@@ -7,6 +7,18 @@ function plot_bee_all_tasks(df::DataFrame, bee_id;
                                   mapping::Union{Nothing,Dict{Any,String}}=nothing, 
                                   add_markers::Bool=true, 
                                   add_legend::Bool=true)
+
+    circle_with_hole = BezierPath([
+        MoveTo(Point(1, 0)),
+        EllipticalArc(Point(0, 0), 1, 1, 0, 0, 2pi),
+        MoveTo(Point(0.5, 0.5)),
+        LineTo(Point(0.5, -0.5)),
+        LineTo(Point(-0.5, -0.5)),
+        LineTo(Point(-0.5, 0.5)),
+        ClosePath(),
+    ])
+
+
     tasks = sort(unique(df.task_id))
     filter!(e -> e != 0, tasks)
     
@@ -22,7 +34,14 @@ function plot_bee_all_tasks(df::DataFrame, bee_id;
                 title = "Evolution of Accuracy for Bee $bee_id Across All Tasks")
     end
     
-    colors = Makie.wong_colors()[1:length(tasks)]
+    # Safely build a list of colors: handle zero tasks and wrap the palette if more tasks than colors.
+    palette = Makie.wong_colors()
+    n_tasks = length(tasks)
+    if n_tasks == 0
+        colors = Any[]
+    else
+        colors = [palette[(i - 1) % length(palette) + 1] for i in 1:n_tasks]
+    end
     
     # Plot individual points with markers
     training_df = filter(row -> row.bee1_id == bee_id && row.bee1_id == row.bee2_id, df)
@@ -48,16 +67,16 @@ function plot_bee_all_tasks(df::DataFrame, bee_id;
         train_rows = training_df[training_df.task_id .== task, :]
         if nrow(train_rows) > 0 && add_markers
             ytrain = Float64.(train_rows[!, col_name])
-            Makie.scatter!(ax, train_rows.time, ytrain, 
-                    color = :green, markersize = markersize+2, marker = :rect)
+            Makie.scatter!(ax, train_rows.time, ytrain, alpha = 0.2,
+                    color = :green, markersize = markersize+2, marker = :circle) #:green
                     #label = "Training Events")
         end
         # Plot suppression events
         suppr_rows = suppression_df[suppression_df.task_id .== task, :]
         if nrow(suppr_rows) > 0 && add_markers
             ysuppr = Float64.(suppr_rows[!, col_name])
-            Makie.scatter!(ax, suppr_rows.time, ysuppr, 
-                    color = :red, markersize = markersize+2, marker = :utriangle)
+            Makie.scatter!(ax, suppr_rows.time, ysuppr, alpha = 0.2,
+                    color = :red, markersize = markersize+4, marker = :xcross) #:red
                     #label = "Suppression Events")
         end
     end

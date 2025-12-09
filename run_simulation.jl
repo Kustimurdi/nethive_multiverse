@@ -229,12 +229,11 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
         loaders, task_info, model_template = prepare_multitask_setup(config["dataset_names"]; 
                                                 batch_size=config["batch_size"])
     else
-        println("type of variance_bounds: ", typeof(config["variance_bounds"]))
         variance_bounds = (Float64(config["variance_bounds"][1]), Float64(config["variance_bounds"][2]))
-        println("type of new variance_bounds: ", typeof(variance_bounds))
         center_generation_bounds = (Float64(config["center_generation_bounds"][1]), Float64(config["center_generation_bounds"][2]))
         conf = TaskConfig(
             config["n_classes"],
+            config["n_tasks"],
             config["features_dimension"],
             config["n_per_class_train"],
             config["n_per_class_test"],
@@ -244,12 +243,25 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
             #config["variance_bounds"],
             #config["center_generation_bounds"],
             variance_bounds,
-            center_generation_bounds,
-            config["n_tasks"]
+            center_generation_bounds
         )
         loaders = prepare_all_gauss_loaders(conf; batchsize=config["batch_size"], shuffle_train=true)
         model_template = create_gauss_model_template(conf)
         config["dataset_names"] = Symbol.("task_$(i)" for i in 1:conf.n_tasks)
+        
+        println("Gaussian loaders prepared for $(length(loaders)) tasks.")
+        println("Each task has $(length(first(values(loaders))["train"])) training samples.")
+        batchsize = config["batch_size"]
+        println("Using batch size: $batchsize")
+        for (k, v) in loaders
+            println("Loader for $(k):")
+            println("  Train size: $(length(v["train"]))")
+            println("  Test size: $(length(v["test"]))")
+            #@show size(x_batch) size(y_batch) # Debugging output
+            #@show typeof(x_batch) typeof(y_batch) # Debugging output
+            #@show size(model(x_batch)) # Debugging output
+            #@show size(y_batch) # Debugging output
+        end
     end
 
     hive = initialize_hive_from_config(config, model_template)
@@ -286,10 +298,10 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                                 save_events=true,
                                 save_losses=true)
     else        
-        save_simulation_results(results, run_output_dir;
-                                save_states=true,
-                                save_events=true,
-                                save_losses=false)
+        #save_simulation_results(results, run_output_dir;
+                                #save_states=true,
+                                #save_events=true,
+                                #save_losses=false)
     end
 
     log_df = log_to_dataframe(results.log)
@@ -298,11 +310,11 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     println("short view:")
     show(first(log_df, 5))
     # Save raw GillespieEventLog as JSON (if available) and also save the DataFrame CSV
-    try
-        save_log(results.log, run_output_dir)
-    catch e
-        @warn "Could not save raw event log: $e"
-    end
+    #try
+        #save_log(results.log, run_output_dir)
+    #catch e
+        #@warn "Could not save raw event log: $e"
+    #end
 
     try
         save_log_df(log_df, run_output_dir)

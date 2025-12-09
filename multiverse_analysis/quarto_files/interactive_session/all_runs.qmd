@@ -1,9 +1,26 @@
 ```{julia}
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/2b2t10c"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/10b10t10c"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/9b9t10c"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_high_deadtimes"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t20c_testrun"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/10b10t20c50e_full"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/15b15t20c100e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t10c"
 ```
 
 ```{julia}
 summaries = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
+```
+
+```{julia}
+folder_path_2 = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
+summaries_2 = CSV.read(joinpath(folder_path_2, "summaries.csv"), DataFrame)
+```
+```{julia}
+summaries_3 = vcat(summaries, summaries_2)
+summaries = summaries_3
 ```
 
 ```{julia}
@@ -17,11 +34,22 @@ f_sum = copy(summaries)
 # filtering the data
 
 ```{julia}
-f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
-f_sum = filter(row -> row.learning_rate == 0.0001, f_sum)
+filter_1 = :lambda_sensitivity
+filter_1_val = 100
+filter_2 = :learning_rate
+filter_2_val = 0.0001
+#filter_2_val = 5.0e-5
+f_sum = filter(row -> row[filter_1] == filter_1_val, f_sum)
+f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
+#f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
+#f_sum = filter(row -> row.learning_rate == 5.0e-5, f_sum)
 #f_sum = filter(row -> row.dead_time == 5.0, f_sum)
 ```
 
+        "lambda_sensitivity": [50.0, 100.0, 150.0],
+        "learning_rate": [0.000005, 0.00001, 0.00005],
+        "interaction_rate": [5.0, 10.0, 15.0, 20.0, 25.0], 
+        "dead_time": [50.0, 100.0, 150.0, 200.0]
 # aggregating the data
 
 ```{julia}
@@ -58,15 +86,8 @@ end
 ```
 
 ```{julia}
-fig = Figure(resolution=(800,600))
-ax = Axis(fig[1, 1], xlabel=string(ycol), ylabel=string(xcol))
-hm = heatmap!(ax, ys, xs, mat; colormap = :viridis)   # note: (x=cols, y=rows) -> ys, xs
-Colorbar(fig[1,2], hm)
-```
-
-```{julia}
-fig = Figure(resolution=(800,600))
-ax = Axis(fig[1,1], xlabel = string(xcol), ylabel = string(ycol))
+heat_fig = Figure(resolution=(800,600))
+ax = Axis(heat_fig[1,1], xlabel = string(xcol), ylabel = string(ycol), title="run $(basename(folder_path)): $(string(valcol))")
 
 # draw on integer grid and keep the mapping via tick labels
 # plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
@@ -74,11 +95,11 @@ hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
 ax.xticks = (1:length(xs), string.(xs))
 ax.yticks = (1:length(ys), string.(ys))
 
-Colorbar(fig[1,2], hm)
+Colorbar(heat_fig[1,2], hm)
 ```
 
 ```{julia}
-display(fig)
+display(heat_fig)
 ```
 
 ```{julia}
@@ -86,5 +107,28 @@ save_path = joinpath(folder_path, "plots")
 if !isdir(save_path)
     mkdir(save_path)
 end
-save(joinpath(save_path, "heatmap_score_dt5ls100.pdf"), fig)
+name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```
 
+
+
+
+
+# remnant
+```{julia}
+group = [:lambda_sensitivity, :learning_rate, :interaction_rate, :dead_time]
+g_sum = groupby(f_sum, group)
+```
+
+```{julia}
+c_sum = combine(g_sum, [:specialization_score_mean, :run_quality_score, :coverage_fraction, :p_end_mean] .=> mean; renamecols=false)
+```
+
+```{julia}
+fig = Figure(resolution=(800,600))
+ax = Axis(fig[1, 1], xlabel=string(ycol), ylabel=string(xcol))
+hm = heatmap!(ax, ys, xs, mat; colormap = :viridis)   # note: (x=cols, y=rows) -> ys, xs
+Colorbar(fig[1,2], hm)
+```

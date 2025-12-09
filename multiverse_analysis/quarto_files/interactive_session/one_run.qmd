@@ -35,26 +35,45 @@ run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/2t2b_high_deadtime/bank_wdbc"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/3t4b/mnist_fmnist_cifar10"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/4t4b/mnist_fmnist_cifar10_svhn2"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/2b2t_2"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/2b2t_complex"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/2b1t_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/2b2t_3"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/3b3t"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/3b3t_ls_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/3b3t_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/8b8t"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/3b3t_10_classes_low_recources"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/9b9t10c"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t10c"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/4b4t20c50e/"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/15b15t20c100e/"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
 data_path = joinpath(folder_path, "data/")
 master_df = build_master_dataframe(data_path)
 ```
 
 ```{julia}
-filter_df = filter(row -> row.learning_rate == 1.0e-5, master_df)
+filter_df = filter(row -> row.learning_rate == 5.0e-5, master_df)
 #filter_df = filter(row -> row.learning_rate == 0.0005, master_df)
 #filter_df = filter(row -> row.dataset_names == "[\"bank\"]", filter_df)
-filter_df = filter(row -> row.interaction_rate == 10.0, filter_df)
+filter_df = filter(row -> row.interaction_rate == 35.0, filter_df)
 filter_df = filter(row -> row.lambda_sensitivity == 100, filter_df)
-filter_df = filter(row -> row.dead_time == 100, filter_df)
+filter_df = filter(row -> row.dead_time == 300.0, filter_df)
 #filter_df = filter(row -> row.punish_rate == 1.0e-5, filter_df)
-filter_df = filter(row -> row.batches_per_step == 50, filter_df)
+#filter_df = filter(row -> row.batches_per_step == 50, filter_df)
+#filter_df = filter(row -> row.n_classes == 10, filter_df)
 println("nrow $(nrow(filter_df))")
-run_path = filter_df.run_path[1]
 ```
 
 # load data
 
 ```{julia}
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/debug_run"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/no_interaction"
+#run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/test_gauss/one_task"
+run_path = filter_df.run_path[3]
 event_log = load_log(run_path)
 config = load_config(joinpath(run_path, "config.json"))
 mapping = load_task_index_mapping(run_path)
@@ -63,9 +82,8 @@ mapping = load_task_index_mapping(run_path)
 # filter the data
 
 ```{julia}
-log = filter(row -> ...)
+bee2log = filter(row -> row.bee1_id ==2, event_log)
 ```
-
 # plot one bee for one task
 
 ```{julia}
@@ -100,7 +118,7 @@ add_legend = true
 for (i, bee) in enumerate(1:n_bees)
     println("bee: $bee")
     ax = Makie.Axis(fig[i,1], xlabel="time", ylabel="accuracy", title="Evolution of Accuracy for Bee $bee Across All Tasks")
-    plot_bee_all_tasks(event_log, bee, ax=ax, mapping=mapping, add_legend=add_legend, linewidth=linewidth, markersize=markersize) 
+    plot_bee_all_tasks(event_log, bee, ax=ax, mapping=mapping, add_legend=add_legend, linewidth=linewidth, markersize=markersize, add_markers=true)
     add_legend = false
 end
 display(fig)

@@ -12,13 +12,13 @@ struct TaskConfig
     n_tasks::Int
 
     function TaskConfig(n_classes::Int,
+                        n_tasks::Int,
                         features_dimension::Int,
                         n_per_class_train::Int,
                         n_per_class_test::Int,
                         use_per_class_variance::Bool,
                         variance_bounds::Tuple{Float64, Float64},
-                        center_generation_bounds::Tuple{Float64, Float64},
-                        n_tasks::Int;
+                        center_generation_bounds::Tuple{Float64, Float64};
                         sampling_gauss_sigma::Float64=1.0)
         
         # Validate parameters
@@ -169,6 +169,11 @@ function generate_rotated_tasks(dataset::NamedTuple, n_tasks::Int)
             test_data = (test_x, rot_test_labels),
             rotation = task_id
         ))
+        println("data for task $(task_id):")
+        println("  Train dataset size (length of rot_train_labels): $(length(rot_train_labels))")
+        println("  Test dataset size: $(length(rot_test_labels))")
+        println("train labels min=", minimum(rot_train_labels), " max=", maximum(rot_train_labels))
+        println("test  labels min=", minimum(rot_test_labels), " max=", maximum(rot_test_labels))
     end
 
     return tasks

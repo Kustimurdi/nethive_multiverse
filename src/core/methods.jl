@@ -275,10 +275,10 @@ function advance_gillespie_time!(hive::MultiTaskHive, total_rate::Float64)
     # Draw from exponential distribution
     # Note: rand() gives [0,1), but we need (0,1] for log, so use 1-rand()
     # or equivalently, just use rand() since log(rand()) works fine in practice
-    #dt = -log(rand()) / total_rate
+    dt = -log(rand()) / total_rate
 
     #diese version sorgt dafür, dass wir selber bestimmen, wie viele Aktionen pro Epoche geschehen
-    dt = -log(rand()) / hive.config.n_steps_per_epoch
+    #dt = -log(rand()) / hive.config.n_steps_per_epoch
     
     # Advance the hive time
     hive.current_time += dt
@@ -353,9 +353,9 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
         end
         
         if verbose 
-            println("Time: $(round(hive.current_time, digits=2)), 
-            Production Events: $(sum(production_count[epoch, :,:, :])), 
-            Suppression Events: $(sum(suppression_count[epoch,:, :, :]))")
+            #println("Time: $(round(hive.current_time, digits=2)), 
+            #Production Events: $(sum(production_count[epoch, :,:, :])), 
+            #Suppression Events: $(sum(suppression_count[epoch,:, :, :]))")
         end
     end
 

@@ -165,7 +165,7 @@ function release_tasks!(suppressed_tasks::Array, suppression_starting_times::Arr
         #println("New suppressed tasks:\n$suppressed_tasks")
     end
 
-    return nothing
+    return old_suppressed_tasks .!= suppressed_tasks
 end
 
 function perform_suppression!(hive::MultiTaskHive, bee_idx::Int, partner_bee_idx::Int, task_idx::Int, loaders::Dict=nothing)
@@ -305,9 +305,9 @@ function gillespie_step!(hive::MultiTaskHive, loaders::Dict)
     # Step 4: Advance time
     advance_gillespie_time!(hive, total_rate)
 
-    release_tasks!(hive.suppressed_tasks, hive.suppression_start_times, hive.current_time, dead_time=hive.config.dead_time)
+    released_tasks = release_tasks!(hive.suppressed_tasks, hive.suppression_start_times, hive.current_time, dead_time=hive.config.dead_time)
     
-    return true, selected_action  # Event occurred successfully
+    return true, selected_action, released_tasks  # Event occurred successfully
 end
 
 function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=false)
@@ -331,7 +331,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
         while hive.current_time < epoch 
 
             # Run one Gillespie step
-            event_occurred, selected_action = gillespie_step!(hive, loaders)
+            event_occurred, selected_action, released_tasks = gillespie_step!(hive, loaders)
             if !event_occurred
                 break  # No more events possible
             end

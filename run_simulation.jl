@@ -277,9 +277,11 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
         println("Simulation completed:")
         println("  Final time: $(results.final_time)")
         println("  Total events: $(results.total_events)")
-        println("  Wall time: $(round(end_time - start_time, digits=2)) seconds")
+        println("  Run time: $(round(end_time - start_time, digits=2)) seconds")
         println()
     end
+
+    config["run_time"] = round(end_time - start_time, digits=2)
     
     if !save_results
         return results
@@ -309,12 +311,6 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     println("log DataFrame size: ", size(log_df))
     println("short view:")
     show(first(log_df, 5))
-    # Save raw GillespieEventLog as JSON (if available) and also save the DataFrame CSV
-    #try
-        #save_log(results.log, run_output_dir)
-    #catch e
-        #@warn "Could not save raw event log: $e"
-    #end
 
     try
         save_log_df(log_df, run_output_dir)

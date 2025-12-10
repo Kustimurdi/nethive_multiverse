@@ -1,21 +1,30 @@
 {
     "base_config": {
-        "n_bees": 1,
-        "dataset_names": ["svhn2"],
-        "n_epochs": 500,
-        "n_steps_per_epoch": 5,
-        "punish_rate": 0.1,
-        "punishment": "resetting",
-        "batch_size": 32,
-        "batches_per_step": 32,
+        "n_bees": 10,
+        "n_tasks": 1,
+        "dataset_names": ["bank", "wdbc"],
+        "n_epochs": 10000,
+        "n_steps_per_epoch": 1,
+        "batch_size": 64,
         "save_nn_epochs": 0,
         "seed": null,
+        "punish_rate": 0.1,
         "production_rate": 1.0,
-        "interaction_rate": 1.0,
-        "dead_time": 1.0
+        "punishment": "resetting",
+        "n_classes": 10,
+        "features_dimension": 10,
+        "n_per_class_train": 100,
+        "n_per_class_test": 50,
+        "use_gauss": true,
+        "use_per_class_variance": true,
+        "variance_bounds": [0.01, 0.05],
+        "batches_per_step": 1000,
+        "center_generation_bounds": [0.0, 1.0]
     },
     "sweep_parameters": {
         "lambda_sensitivity": [1.0],
-        "learning_rate": [0.000001, 0.000005, 0.00001, 0.00005,0.0001, 0.0005]
+        "learning_rate": [0.000001, 0.000005, 0.00001, 0.00005,0.0001, 0.0005],
+        "interaction_rate": [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0], 
+        "dead_time": [350.0]
     }
 }

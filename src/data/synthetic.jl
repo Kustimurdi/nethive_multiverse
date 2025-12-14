@@ -1,5 +1,3 @@
-#register_mod_add(target_input, )
-
 struct TaskConfig
     n_classes::Int
     features_dimension::Int
@@ -60,9 +58,7 @@ struct TaskConfig
 end
 
 
-function prepare_all_gauss_loaders(config::TaskConfig; batchsize::Int=32, shuffle_train::Bool=true)
-    dataset = create_dataset(config)
-    all_datasets = generate_rotated_tasks(dataset, config.n_tasks)
+function prepare_all_gauss_loaders(all_datasets; batchsize::Int=32, shuffle_train::Bool=true)
     loaders = Dict{Symbol, Dict{String, Any}}()
     for (i, task) in enumerate(all_datasets)
         println("Preparing loaders for task $(i)...")
@@ -80,16 +76,16 @@ function prepare_all_gauss_loaders(config::TaskConfig; batchsize::Int=32, shuffl
     return loaders
 end
 
-function create_gauss_model_template(config::TaskConfig)
+function create_gauss_model_template(features_dimension::Int, n_classes::Int)
     function model_template()
         model = Chain(
-            Dense(config.features_dimension, 128, relu),
+            Dense(features_dimension, 128, relu),
             Dense(128, 64, relu),
-            Dense(64, config.n_classes)
+            Dense(64, n_classes)
         )
         return model
     end
-    @info "Created gauss model template" input_dim=config.features_dimension output_dim=config.n_classes
+    @info "Created gauss model template" input_dim=features_dimension output_dim=n_classes
     return model_template
 end
 

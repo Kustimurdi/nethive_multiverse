@@ -7,6 +7,8 @@ folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/10b10t20c50e_full"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/15b15t20c100e"
 folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_000001lr"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_logsweep"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t10c"
 ```
 
@@ -15,15 +17,14 @@ summaries = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
 ```
 
 ```{julia}
-folder_path_2 = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
+folder_path_2 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_logsweep_2"
 summaries_2 = CSV.read(joinpath(folder_path_2, "summaries.csv"), DataFrame)
 ```
 ```{julia}
 summaries_3 = vcat(summaries, summaries_2)
 summaries = summaries_3
 ```
-
-```{julia}
+```{julia} 
 master_df = build_master_dataframe(joinpath(folder_path, "data"))
 ```
 
@@ -37,7 +38,7 @@ f_sum = copy(summaries)
 filter_1 = :lambda_sensitivity
 filter_1_val = 100
 filter_2 = :learning_rate
-filter_2_val = 0.0001
+filter_2_val = 1.0e-5
 #filter_2_val = 5.0e-5
 f_sum = filter(row -> row[filter_1] == filter_1_val, f_sum)
 f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
@@ -71,8 +72,8 @@ sort!(agg, groupcols)
 ```{julia}
 xcol = Symbol(xcol)
 ycol = Symbol(ycol)
-#valcol = :mean_coverage
-valcol = :mean_score
+valcol = :mean_coverage
+#valcol = :mean_score
 
 xs = sort(unique(agg[:, xcol]))
 ys = sort(unique(agg[:, ycol]))
@@ -108,13 +109,9 @@ if !isdir(save_path)
     mkdir(save_path)
 end
 name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
-save(joinpath(save_path, "$(name).pdf"), fig)
-save(joinpath(save_path, "$(name).png"), fig)
+save(joinpath(save_path, "$(name).pdf"), heat_fig)
+save(joinpath(save_path, "$(name).png"), heat_fig)
 ```
-
-
-
-
 
 # remnant
 ```{julia}

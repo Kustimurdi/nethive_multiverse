@@ -14,6 +14,7 @@ using MLDatasets
 using Random
 using Statistics
 using Dates
+using JLD2
 
 # Load our modules
 include("src/data/loaders.jl")
@@ -22,6 +23,7 @@ include("src/core/definitions.jl")
 include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
+include("src/data/prepare_gaussset.jl")
 
 function parse_commandline()
     s = ArgParseSettings(description = "Run Gillespie NN simulations with flexible configuration")
@@ -192,6 +194,20 @@ function initialize_hive_from_config(config::Dict, model_template::Function)
     return hive
 end
 
+function load_models_into_hive!(hive::MultiTaskHive, model_dir::String)
+    """Load pre-trained models into the hive from specified directory"""
+    for (bee_idx, brain) in enumerate(hive.brains)
+        model_path = joinpath(model_dir, "bee_$(bee_idx)_model.jdl2")
+        if isfile(model_path)
+            @info "Loading model for bee $(bee_idx) from $model_path"
+            JLD2.@load model_path model_state
+            Flux.loadmodel!(brain, model_state)
+        else
+            @warn "Model file not found for bee $(bee_idx): $model_path"
+        end
+    end
+end
+
 function run_single_simulation(config::Dict, output_dir::String, foldername::String; 
                               timestamp::Bool=false, verbose::Bool=true, save_results=false, save_all=false)
     """Run a single simulation with given configuration"""
@@ -224,8 +240,24 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     end
     
     # Initialize loaders and hive
+    println("config:")
+    for (k,v) in config
+        println("  $k: $v")
+    end
 
-    if get(config, "use_gauss", false) === false
+    if get(config,"use_gauss_dataset", false) === true
+        gauss_dataset_dir = config["gauss_dataset_dir"]
+        gauss_dataset_name = config["gauss_dataset_name"]
+        gauss_dataset_path = joinpath(gauss_dataset_dir, gauss_dataset_name)
+        all_datasets = load_gauss_dataset(gauss_dataset_path)
+        dataset_conf = load_gauss_metadata(gauss_dataset_dir)
+        loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
+
+        model_template = create_gauss_model_template(dataset_conf["features_dimension"], dataset_conf["n_classes"])
+        config["dataset_names"] = Symbol.("task_$(i)" for i in 1:config["n_tasks"])
+        println("Dataset names: ", config["dataset_names"])
+
+    elseif get(config, "use_gauss", false) === false
         loaders, task_info, model_template = prepare_multitask_setup(config["dataset_names"]; 
                                                 batch_size=config["batch_size"])
     else
@@ -238,33 +270,23 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
             config["n_per_class_train"],
             config["n_per_class_test"],
             config["use_per_class_variance"],
-            #Tuple(config["variance_bounds"]),
-            #Tuple(config["center_generation_bounds"]),
-            #config["variance_bounds"],
-            #config["center_generation_bounds"],
             variance_bounds,
             center_generation_bounds
         )
-        loaders = prepare_all_gauss_loaders(conf; batchsize=config["batch_size"], shuffle_train=true)
-        model_template = create_gauss_model_template(conf)
+        dataset = create_dataset(conf)
+        all_datasets = generate_rotated_tasks(dataset, conf.n_tasks)
+        loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
+        model_template = create_gauss_model_template(conf.features_dimension, conf.n_classes)
         config["dataset_names"] = Symbol.("task_$(i)" for i in 1:conf.n_tasks)
-        
-        println("Gaussian loaders prepared for $(length(loaders)) tasks.")
-        println("Each task has $(length(first(values(loaders))["train"])) training samples.")
-        batchsize = config["batch_size"]
-        println("Using batch size: $batchsize")
-        for (k, v) in loaders
-            println("Loader for $(k):")
-            println("  Train size: $(length(v["train"]))")
-            println("  Test size: $(length(v["test"]))")
-            #@show size(x_batch) size(y_batch) # Debugging output
-            #@show typeof(x_batch) typeof(y_batch) # Debugging output
-            #@show size(model(x_batch)) # Debugging output
-            #@show size(y_batch) # Debugging output
-        end
     end
 
     hive = initialize_hive_from_config(config, model_template)
+    
+    if get(config, "load_models_from", "") != ""
+        model_dir = config["load_models_from"]
+        println("Loading initial models from directory: $model_dir")
+        load_models_into_hive!(hive, model_dir)
+    end
     
     println("Starting simulation...")
     # Run simulation
@@ -282,6 +304,25 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     end
 
     config["run_time"] = round(end_time - start_time, digits=2)
+
+    run_output_dir = joinpath(output_dir, foldername)
+    if get(config, "save_nn_epochs", 0) > 0 && length(results.model_states) > 0
+        for (i, state_snapshot) in enumerate(results.model_states)
+            epoch = state_snapshot.epoch
+            time = state_snapshot.time
+            models = state_snapshot.models
+            epoch_dir = joinpath(run_output_dir, "epoch_$(epoch)")
+            mkpath(epoch_dir)
+            for (b, model_state) in enumerate(models)
+                model_path = joinpath(epoch_dir, "bee_$(b)_model.jdl2")
+                JLD2.@save model_path model_state
+                #jdlsave(model_path; model_state)
+                # Save model state using BSON
+                #using BSON
+                #BSON.@save model_path model_state
+            end
+        end    
+    end
     
     if !save_results
         return results
@@ -292,7 +333,6 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
         foldername *= "_$time_str"
     end
 
-    run_output_dir = joinpath(output_dir, foldername)
     
     if save_all
         save_simulation_results(results, run_output_dir;
@@ -335,7 +375,9 @@ function main()
     """Main function for command line usage"""
     args = parse_commandline()
     if !isempty(args["config"])
+        println("failt es davor?")
         config = load_config_from_json(args["config"])
+        println("failt es danach?")
     else
         config = create_default_config()
     end
@@ -343,7 +385,13 @@ function main()
     # Merge with command line arguments
     config = merge_config_with_args(config, args)
 
-    if get(config, "use_gauss", false) === false
+    if get(config, "use_gauss_dataset", false) === true
+        # For Gaussian dataset tasks, set max dimensions based on loaded dataset
+        gauss_dataset_dir = config["gauss_dataset_dir"]
+        dataset_conf = load_gauss_metadata(gauss_dataset_dir)
+        config["max_input_dim"] = dataset_conf["features_dimension"]
+        config["max_output_dim"] = dataset_conf["n_classes"]
+    elseif get(config, "use_gauss", false) === false
         config["dataset_names"] = Symbol.(config["dataset_names"])
         max_input_dim, max_output_dim = calculate_universal_dimensions(config["dataset_names"])
         config["max_input_dim"] = max_input_dim

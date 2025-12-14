@@ -318,6 +318,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
     loss_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
 
     log = GillespieEventLog()
+    model_states = Vector{Any}()
 
     update_all_bees!(hive, loaders)
     for b in 1:hive.n_bees
@@ -338,18 +339,18 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
             document_event!(selected_action, epoch, production_count, suppression_count)
             log_events(log, hive, selected_action)
 
-            #println("action executed: $(selected_action)")
-            #println("current accuracies: $(hive.queen_genes)")
-            #println("current suppressed tasks: $(hive.suppressed_tasks)")
-            #println()
-
         end
 
         performance_history[1+epoch, :, :] .= hive.queen_genes
         loss_history[1+epoch, :, :] .= hive.losses
 
         if (hive.config.save_nn_epochs) > 0 && (epoch % hive.config.save_nn_epochs == 0)
-            #save the neural networks 
+            states = Vector{Any}(undef, hive.n_bees)
+            for b in 1:hive.n_bees
+                #states[b] = deepcopy(hive.brains[b])
+                states[b] = Flux.state(hive.brains[b])
+            end
+            push!(model_states, (epoch=epoch, time=hive.current_time, models=states))
         end
         
         if verbose 
@@ -359,7 +360,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
         end
     end
 
-    return (log = log, production_count = production_count, suppression_count = suppression_count, 
+    return (log = log, model_states = model_states, production_count = production_count, suppression_count = suppression_count, 
             performance_history = performance_history, loss_history = loss_history, 
             final_time=hive.current_time, total_events=sum(production_count) + sum(suppression_count))
 end

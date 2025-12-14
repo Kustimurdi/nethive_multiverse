@@ -16,6 +16,7 @@ using MLDatasets
 using Random
 using Statistics
 using Dates
+using JLD2
 
 include("run_simulation.jl")
 
@@ -51,7 +52,7 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "2:00:00"
+            default = "10:00:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
@@ -662,6 +663,7 @@ function main()
     end
 
     if command == "generate"
+        println("Generating Slurm job scripts...")
         sweep_config = load_parameter_sweep_config(args["config"])
         script_paths, submit_script = generate_jobs(sweep_config, args)
         

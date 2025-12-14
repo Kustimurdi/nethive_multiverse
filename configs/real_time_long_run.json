@@ -1,9 +1,9 @@
 {
     "base_config": {
-        "n_bees": 10,
-        "n_tasks": 10,
+        "n_bees": 2,
+        "n_tasks":2,
         "dataset_names": ["bank", "wdbc"],
-        "n_epochs": 100,
+        "n_epochs": 500,
         "n_steps_per_epoch": 1,
         "batch_size": 64,
         "save_nn_epochs": 0,
@@ -11,7 +11,7 @@
         "punish_rate": 0.1,
         "production_rate": 1.0,
         "punishment": "time_out",
-        "n_classes": 20,
+        "n_classes": 15,
         "features_dimension": 10,
         "n_per_class_train": 100,
         "n_per_class_test": 50,
@@ -23,8 +23,8 @@
     },
     "sweep_parameters": {
         "lambda_sensitivity": [100.0],
-        "learning_rate": [0.00005, 0.0001],
-        "interaction_rate": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0], 
-        "dead_time": [5.0, 10.0, 15.0, 20.0, 25.0]
+        "learning_rate": [0.00001, 0.00005],
+        "interaction_rate": [0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
+        "dead_time": [0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0]
     }
 }

@@ -1,0 +1,75 @@
+name: CI
+# env:
+#   JULIA_NUM_THREADS: 2
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+    tags: '*'
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.version == 'nightly' }} # allow nightly to fail
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - 'min' # Minimum Julia version that Zygote supports.
+          - '1'   # automatically expands to the latest stable 1.x release of Julia
+          - 'nightly'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+        # include:
+        #   - os: windows-latest
+        #     version: '1'
+        #     arch: x64
+        #   - os: macOS-latest
+        #     version: '1'
+        #     arch: x64
+    steps:
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+        env:
+           JULIA_PKG_SERVER: ""
+      - uses: julia-actions/julia-runtest@v1
+        env:
+           JULIA_PKG_SERVER: ""
+      - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+      - uses: codecov/codecov-action@v3
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+        with:
+          file: lcov.info
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1'
+      - run: |
+          julia --project=docs -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()'
+      - run: |
+          julia --project=docs -e '
+            using Documenter: doctest
+            using Zygote
+            doctest(Zygote)' # change MYPACKAGE to the name of your package
+      - run: julia --project=docs docs/make.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

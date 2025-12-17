@@ -52,7 +52,7 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "10:00:00"
+            default = "20:00:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
@@ -64,7 +64,7 @@ function parse_slurm_args()
         "--array-max"
             help = "Maximum number of simultaneous array jobs"
             arg_type = Int
-            default = 200
+            default = 300
         "--email"
             help = "Email for job notifications"
             arg_type = String
@@ -487,7 +487,7 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         write(io, "esac\n")
         
         write(io, "\n# Run simulation\n")
-        write(io, "echo \"Starting Julia simulation...\"\n")
+        write(io, "echo \"Starting Julia simulation at...\"\n")
         julia_exec = get(args, "julia-exec", "julia")
         write(io, "$(julia_exec) run_simulation.jl --config \$CONFIG_FILE --output-dir $(output_dir)/data --base-name \$BASE_NAME --timestamp --verbose --save-results\n")
         
@@ -696,7 +696,6 @@ function main()
     end
 end
 
-
 function check_job_status(output_dir::String)
     """Check status of submitted jobs"""
     println("Checking job status...")
@@ -771,5 +770,3 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
-
-

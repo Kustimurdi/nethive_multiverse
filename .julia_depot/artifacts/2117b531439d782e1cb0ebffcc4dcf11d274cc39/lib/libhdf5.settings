@@ -1,0 +1,93 @@
+        SUMMARY OF THE HDF5 CONFIGURATION
+        =================================
+
+General Information:
+-------------------
+                   HDF5 Version: 1.14.6
+                  Configured on: 1970-01-01
+                  Configured by: Unix Makefiles
+                    Host system: Linux-5.15.0-124-generic
+              Uname information: Linux
+                       Byte sex: little-endian
+             Installation point: /workspace/destdir
+
+Compiling Options:
+------------------
+                     Build Mode: Release
+              Debugging Symbols: OFF
+                        Asserts: OFF
+                      Profiling: OFF
+             Optimization Level: OFF
+
+Linking Options:
+----------------
+                      Libraries: 
+  Statically Linked Executables: OFF
+                        LDFLAGS: -L/workspace/destdir/lib -lsz
+                     H5_LDFLAGS: 
+                     AM_LDFLAGS: 
+                Extra libraries: m;dl;/opt/x86_64-linux-gnu/x86_64-linux-gnu/sys-root/usr/local/lib/libcurl.so;/opt/x86_64-linux-gnu/x86_64-linux-gnu/sys-root/usr/local/lib/libssl.so;/opt/x86_64-linux-gnu/x86_64-linux-gnu/sys-root/usr/local/lib/libcrypto.so;/opt/x86_64-linux-gnu/x86_64-linux-gnu/sys-root/usr/local/lib/libmpi.so
+                       Archiver: /opt/bin/x86_64-linux-gnu-libgfortran5-cxx11-mpi+mpich/x86_64-linux-gnu-ar
+                       AR_FLAGS:
+                         Ranlib: /opt/bin/x86_64-linux-gnu-libgfortran5-cxx11-mpi+mpich/x86_64-linux-gnu-ranlib
+
+Languages:
+----------
+                              C: YES
+                     C Compiler: /opt/bin/x86_64-linux-gnu-libgfortran5-cxx11-mpi+mpich/x86_64-linux-gnu-gcc 8.1.0
+                       CPPFLAGS: 
+                    H5_CPPFLAGS: 
+                    AM_CPPFLAGS: 
+                         CFLAGS:   -std=c99  -fstdarg-opt -fmessage-length=0
+                      H5_CFLAGS: -Wall;-Wcast-qual;-Wconversion;-Wextra;-Wfloat-equal;-Wformat=2;-Winit-self;-Winvalid-pch;-Wmissing-include-dirs;-Wshadow;-Wundef;-Wwrite-strings;-pedantic;-Wno-c++-compat;-Wbad-function-cast;-Wcast-align;-Wformat;-Wimplicit-function-declaration;-Wint-to-pointer-cast;-Wmissing-declarations;-Wmissing-prototypes;-Wnested-externs;-Wold-style-definition;-Wpacked;-Wpointer-sign;-Wpointer-to-int-cast;-Wredundant-decls;-Wstrict-prototypes;-Wswitch;-Wunused-but-set-variable;-Wunused-variable;-Wunused-function;-Wunused-parameter;-finline-functions;-Wno-aggregate-return;-Wno-inline;-Wno-missing-format-attribute;-Wno-missing-noreturn;-Wno-overlength-strings;-Wlarger-than=2560;-Wlogical-op;-Wframe-larger-than=16384;-Wpacked-bitfield-compat;-Wsync-nand;-Wno-unsuffixed-float-constants;-Wdouble-promotion;-Wtrampolines;-Wstack-usage=8192;-Wmaybe-uninitialized;-Wno-jump-misses-init;-Wstrict-overflow=2;-Wno-suggest-attribute=const;-Wno-suggest-attribute=noreturn;-Wno-suggest-attribute=pure;-Wno-suggest-attribute=format;-Wdate-time;-Warray-bounds=2;-Wc99-c11-compat;-Wincompatible-pointer-types;-Wint-conversion;-Wshadow;-Wduplicated-cond;-Whsa;-Wnormalized;-Wnull-dereference;-Wunused-const-variable;-Walloca;-Walloc-zero;-Wduplicated-branches;-Wformat-overflow=2;-Wformat-truncation=1;-Wrestrict;-Wattribute-alias;-Wshift-overflow=2;-Wcast-function-type;-Wmaybe-uninitialized;-Wcast-align=strict;-Wno-suggest-attribute=cold;-Wno-suggest-attribute=malloc
+                      AM_CFLAGS: 
+               Shared C Library: YES
+               Static C Library: NO
+
+                        Fortran: ON
+               Fortran Compiler: /opt/bin/x86_64-linux-gnu-libgfortran5-cxx11-mpi+mpich/x86_64-linux-gnu-gfortran 8.1.0
+                  Fortran Flags: 
+               H5 Fortran Flags: 
+               AM Fortran Flags: 
+         Shared Fortran Library: YES
+         Static Fortran Library: NO
+               Module Directory: /workspace/srcdir/hdf5-1.14.6/builddir/mod
+
+                            C++: ON
+                   C++ Compiler: /opt/bin/x86_64-linux-gnu-libgfortran5-cxx11-mpi+mpich/x86_64-linux-gnu-g++ 8.1.0
+                      C++ Flags:    -fstdarg-opt -fmessage-length=0
+                   H5 C++ Flags: -Wall;-Wcast-qual;-Wconversion;-Wctor-dtor-privacy;-Weffc++;-Wextra;-Wfloat-equal;-Wformat=2;-Winit-self;-Winvalid-pch;-Wmissing-include-dirs;-Wnon-virtual-dtor;-Wold-style-cast;-Woverloaded-virtual;-Wreorder;-Wshadow;-Wsign-promo;-Wundef;-Wwrite-strings;-pedantic;-Wcast-align;-Wmissing-declarations;-Wpacked;-Wredundant-decls;-Wswitch;-Wunused-but-set-variable;-Wunused-function;-Wunused-variable;-Wunused-parameter;-Wno-aggregate-return;-Wno-inline;-Wno-missing-format-attribute;-Wno-missing-noreturn;-Wno-overlength-strings;-Wlarger-than=2560;-Wlogical-op;-Wframe-larger-than=16384;-Wpacked-bitfield-compat;-Wsync-nand;-Wdouble-promotion;-Wtrampolines;-Wstack-usage=8192;-Wmaybe-uninitialized;-Wstrict-overflow=2;-Wno-suggest-attribute=const;-Wno-suggest-attribute=noreturn;-Wno-suggest-attribute=pure;-Wno-suggest-attribute=format;-Wdate-time;-Wopenmp-simd;-Warray-bounds=2;-Wshadow;-Wduplicated-cond;-Whsa;-Wnormalized;-Wnull-dereference;-Wunused-const-variable;-Wattribute-alias;-Wshift-overflow=2;-Wcast-function-type;-Wmaybe-uninitialized;-Wcast-align=strict;-Wno-suggest-attribute=cold;-Wno-suggest-attribute=malloc
+                   AM C++ Flags: 
+             Shared C++ Library: YES
+             Static C++ Library: NO
+
+                           JAVA: OFF
+                  JAVA Compiler:  
+
+Features:
+---------
+                     Parallel HDF5: ON
+  Parallel Filtered Dataset Writes: ON
+                Large Parallel I/O: ON
+                High-level library: ON
+Dimension scales w/ new references: 
+                  Build HDF5 Tests: OFF
+                  Build HDF5 Tools: ON
+                   Build GIF Tools: OFF
+                      Threadsafety: ON
+               Default API mapping: v114
+    With deprecated public symbols: ON
+            I/O filters (external):  DEFLATE DECODE ENCODE
+                  _Float16 support: OFF
+                     Map (H5M) API: ON
+                        Direct VFD: ON
+                        Mirror VFD: ON
+                     Subfiling VFD: ON
+                (Read-Only) S3 VFD: ON
+              (Read-Only) HDFS VFD: OFF
+    Packages w/ extra debug output: 
+                       API Tracing: OFF
+              Using memory checker: OFF
+                  Use file locking: best-effort
+         Strict File Format Checks: OFF
+      Optimization Instrumentation: 

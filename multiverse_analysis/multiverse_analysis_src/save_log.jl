@@ -9,7 +9,7 @@ using CSV
 using JSON3
 using Dates
 
-const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_logsweep_2"
+const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c1000e_lr5_rest"
 
 include(joinpath(@__DIR__, "load_data.jl"))
 include(joinpath(@__DIR__, "analyse_log.jl"))

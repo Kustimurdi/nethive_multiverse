@@ -1,0 +1,25 @@
+{
+    "base_config": {
+        "n_bees": 5,
+        "use_gauss_dataset": true,
+        "n_tasks": 5,
+        "n_epochs": 200,
+        "learning_rate": 0.00005,
+        "punishment": "time_out",
+        "batch_size": 32,
+        "batches_per_step": 500,
+        "save_nn_epochs": 200,
+        "seed": null,
+        "production_rate": 1.0,
+        "gauss_dataset_dir": "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_datasets",
+        "gauss_dataset_name": "gauss_dataset_20251211112005.jld2",
+
+        "n_steps_per_epoch": -1,
+        "punish_rate": 1.0
+    },
+    "sweep_parameters": {
+        "lambda_sensitivity": [100.0],
+        "dead_time": [10.0, 50.0, 100.0],
+        "interaction_rate": [10.0, 20.0, 50.0]
+    }
+}

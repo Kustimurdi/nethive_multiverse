@@ -350,7 +350,8 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
                 #states[b] = deepcopy(hive.brains[b])
                 states[b] = Flux.state(hive.brains[b])
             end
-            push!(model_states, (epoch=epoch, time=hive.current_time, models=states))
+            suppression_time_left = hive.suppression_start_times .- hive.current_time .* (.!hive.suppressed_tasks)
+            push!(model_states, (epoch=epoch, time=hive.current_time, models=states, suppressed_tasks=copy(hive.suppressed_tasks), suppression_time_left=suppression_time_left))
         end
         
         if verbose 

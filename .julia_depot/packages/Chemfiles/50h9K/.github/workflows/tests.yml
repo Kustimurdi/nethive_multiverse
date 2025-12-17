@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # Check all PR
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        julia-version: [lts, "1.11", "nightly"]
+        include:
+          - os: windows-2022
+            julia-version: lts
+          - os: macos-14
+            julia-version: lts
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+      - name: build package
+        run: julia --check-bounds=yes --inline=no --project -e 'using Pkg; Pkg.build("Chemfiles")'
+      - name: run tests
+        run: julia --check-bounds=yes --inline=no --project -e 'using Pkg; Pkg.test("Chemfiles"; coverage=true)'
+      - name: run extra checks
+        if: matrix.os == 'ubuntu-24.04'
+        run: ./scripts/check_used_functions.py
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-24.04'
+        with:
+          fail_ci_if_error: true
+          verbose: true

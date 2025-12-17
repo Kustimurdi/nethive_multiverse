@@ -6,8 +6,9 @@ using Statistics
 using CairoMakie
 ```
 ```{julia}
-#GLMakie.activate!()
-CairoMakie.activate!()
+using GLMakie
+GLMakie.activate!()
+#CairoMakie.activate!()
 ```
 
 ```{julia}

@@ -1,0 +1,181 @@
+"""
+    testmode!(model, [mode]) -> model
+
+Set a layer, or all layers in a model, to test mode.
+This disables the effect of [`Dropout`](@ref) and
+some other regularisation layers.
+
+If you manually set a model into test mode, you need to manually place
+it back into train mode during training phase, using [`trainmode!`](@ref).
+
+There is an optional second argument, which takes a symbol `:auto` to
+reset all layers back to the default automatic mode.
+
+# Example
+
+```jldoctest
+julia> d = Dropout(0.3)
+Dropout(0.3)
+
+julia> testmode!(d)   # dropout is now always disabled
+Dropout(0.3, active=false)
+
+julia> trainmode!(d)  # dropout is now always enabled
+Dropout(0.3, active=true)
+
+julia> testmode!(d, :auto)  # back to default
+Dropout(0.3)
+```
+"""
+testmode!(m) = testmode!(m, true)
+
+
+function testmode!(m, mode)
+  inactive = if mode isa Symbol
+    mode === :auto || throw(ArgumentError(lazy"testmode! accepts only the symbol :auto, got :$mode"))
+    nothing
+  elseif mode isa Union{Bool,Nothing}
+    mode
+  else
+    throw(ArgumentError(lazy"testmode! does not accept $(repr(mode)) as the 2nd argument"))
+  end
+  foreach(x -> testmode!(x, inactive), trainable(m))
+  m
+end
+
+"""
+    trainmode!(model) -> model
+
+Set a layer, or all layers in a model, to training mode.
+Opposite to [`testmode!`](@ref), see further details there.
+"""
+trainmode!(m) = testmode!(m, false)
+trainmode!(m, mode::Symbol) = testmode!(m, mode)
+trainmode!(m, ::Nothing) = testmode!(m, nothing)  # why do we have so much API?
+
+
+
+# CPU/GPU movement conveniences
+
+"""
+    cpu(m)
+
+Copies `m` onto the CPU, the opposite of [`gpu`](@ref).
+Recurses into structs (thanks to Functors.jl).
+
+# Example
+```julia-repl
+julia> m_gpu = Dense(CUDA.randn(2, 5))
+Dense(5 => 2)       # 12 parameters
+
+julia> m_gpu.bias  # matches the given weight matrix
+2-element CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}:
+ 0.0
+ 0.0
+
+julia> m = m_gpu |> cpu
+Dense(5 => 2)       # 12 parameters
+
+julia> m.bias
+2-element Vector{Float32}:
+ 0.0
+ 0.0
+```
+"""
+cpu(x) = cpu_device()(x)
+
+"""
+    gpu(m)
+
+Copies `m` to the current GPU device (using current GPU backend), if one is available.
+If no GPU is available, it does nothing (but prints a warning the first time).
+It recurses into structs according to Functors.jl.
+
+Use [`cpu`](@ref) to copy back to ordinary `Array`s.
+See also [`f32`](@ref) and [`f16`](@ref) to change element type only.
+
+This function is just defined for convenience around [`gpu_device`](@ref), 
+and is equivalent to `gpu_device()(m)`.
+You may consider defining `device = gpu_device()` once and then using `device(m)` to move data.
+
+# Example
+```julia-repl
+julia> m = Dense(rand(2, 3))  # constructed with Float64 weight matrix
+Dense(3 => 2)       # 8 parameters
+
+julia> typeof(m.weight)
+Matrix{Float64} (alias for Array{Float64, 2})
+
+julia> m_gpu = gpu(m)  # can equivalently be written m_gpu = m |> gpu
+Dense(3 => 2)       # 8 parameters
+
+julia> typeof(m_gpu.weight)
+CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}
+```
+"""
+gpu(x) = gpu_device()(x)
+
+# Precision
+
+struct FluxEltypeAdaptor{T} end
+
+Adapt.adapt_storage(::FluxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}) where {T<:AbstractFloat} = 
+  convert(AbstractArray{T}, x)
+Adapt.adapt_storage(::FluxEltypeAdaptor{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}) where {T<:AbstractFloat} = 
+  convert(AbstractArray{Complex{T}}, x)
+
+_paramtype(::Type{T}, m) where T = fmap(adapt(FluxEltypeAdaptor{T}()), m)
+
+# fastpath for arrays
+_paramtype(::Type{T}, x::AbstractArray{<:AbstractFloat}) where {T<:AbstractFloat} = 
+  convert(AbstractArray{T}, x)
+_paramtype(::Type{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}) where {T<:AbstractFloat} = 
+  convert(AbstractArray{Complex{T}}, x)
+
+"""
+    f32(m)
+
+Converts the `eltype` of model's *floating point* parameters to `Float32` (which is Flux's default).
+Recurses into structs marked with [`@layer`](@ref Flux.@layer).
+
+See also [`f64`](@ref) and [`f16`](@ref).
+"""
+f32(m) = _paramtype(Float32, m)
+
+"""
+    f64(m)
+
+Converts the `eltype` of model's *floating point* parameters to `Float64`.
+Recurses into structs marked with [`@layer`](@ref Flux.@layer).
+
+See also [`f32`](@ref) and [`f16`](@ref).
+"""
+f64(m) = _paramtype(Float64, m)
+
+"""
+    f16(m)
+
+Converts the `eltype` of model's *floating point* parameters to `Float16`.
+Recurses into structs marked with [`@layer`](@ref Flux.@layer).
+
+Support for `Float16` is limited on many CPUs. Julia may
+convert to `Float32` for each operation, which is slow.
+
+See also [`f32`](@ref) and [`f64`](@ref).
+
+# Example
+```jldoctest
+julia> m = Chain(Dense(784, 2048, relu), Dense(2048, 10))  # all Float32
+Chain(
+  Dense(784 => 2048, relu),             # 1_607_680 parameters
+  Dense(2048 => 10),                    # 20_490 parameters
+)                   # Total: 4 arrays, 1_628_170 parameters, 6.211 MiB.
+
+julia> m |> f16  # takes half the memory
+Chain(
+  Dense(784 => 2048, relu),             # 1_607_680 parameters
+  Dense(2048 => 10),                    # 20_490 parameters
+)                   # Total: 4 arrays, 1_628_170 parameters, 3.106 MiB.
+```
+"""
+f16(m) = _paramtype(Float16, m)

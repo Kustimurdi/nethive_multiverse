@@ -1,15 +1,8 @@
 ```{julia}
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/2b2t10c"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/10b10t10c"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/9b9t10c"
-folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_high_deadtimes"
-#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t20c_testrun"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/10b10t20c50e_full"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/real_time/15b15t20c100e"
-folder_path = "/project/theorie/n/N.Pfaffenzeller/multiverse_2/gauss_runs/10b10t10c_long_sweep"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_000001lr"
-folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_logsweep"
-#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_runs/4b4t10c"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/save_model_run"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/2b2t15c1000e_lr5"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/bt_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_doch_kuezer"
 ```
 
 ```{julia}
@@ -39,7 +32,7 @@ filter_1 = :lambda_sensitivity
 filter_1_val = 100
 filter_2 = :learning_rate
 filter_2_val = 1.0e-5
-#filter_2_val = 5.0e-5
+filter_2_val = 5.0e-5
 f_sum = filter(row -> row[filter_1] == filter_1_val, f_sum)
 f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
 #f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
@@ -47,15 +40,13 @@ f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
 #f_sum = filter(row -> row.dead_time == 5.0, f_sum)
 ```
 
-        "lambda_sensitivity": [50.0, 100.0, 150.0],
-        "learning_rate": [0.000005, 0.00001, 0.00005],
-        "interaction_rate": [5.0, 10.0, 15.0, 20.0, 25.0], 
-        "dead_time": [50.0, 100.0, 150.0, 200.0]
 # aggregating the data
 
 ```{julia}
-xcol = "dead_time"
-ycol = "interaction_rate"
+#xcol = "dead_time"
+#ycol = "interaction_rate"
+xcol = "n_bees"
+ycol = "n_tasks"
 metric_col = :coverage_fraction
 groupcols = [Symbol(xcol), Symbol(ycol)]
 agg = combine(groupby(f_sum, groupcols),

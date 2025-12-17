@@ -60,3 +60,10 @@ max_coverage = maximum(summary_df.coverage_fraction)
 filter_sum = summary_df[summary_df.coverage_fraction .== max_coverage, :]
 run_path = filter_sum.run_path[1]
 ```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_new_functions/save_git_data"
+data_path = joinpath(folder_path, "data/")
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_new_functions/save_git_data/data/param_1_rep_1"
+config = load_config(joinpath(run_path, "config.json"))
+```

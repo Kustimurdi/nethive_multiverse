@@ -1,5 +1,6 @@
-using Pkg
-Pkg.activate("./env_nethive_multiverse/")
+println("hallo1")
+#using Pkg
+#Pkg.activate("./env_nethive_multiverse/")
 #Pkg.instantiate()
 
 # Load packages directly (they should be available via JULIA_PROJECT)
@@ -10,11 +11,13 @@ using Distributions
 using Flux
 using JSON3
 using LinearAlgebra
-using MLDatasets
+#using MLDatasets
 using Random
 using Statistics
 using Dates
 using JLD2
+println("hallo3")
+exit()
 
 # Load our modules
 include("src/data/loaders.jl")
@@ -24,6 +27,8 @@ include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 include("src/data/prepare_gaussset.jl")
+
+println("hallo4")
 
 function parse_commandline()
     s = ArgParseSettings(description = "Run Gillespie NN simulations with flexible configuration")
@@ -194,6 +199,18 @@ function initialize_hive_from_config(config::Dict, model_template::Function)
     return hive
 end
 
+"""
+Overwrite the overlapping top-left region of `dest` with `src`.
+Only the overlapping entries are overwritten; the rest of `dest` is left untouched.
+This works in-place and returns `dest`.
+"""
+function overwrite_overlap!(dest::AbstractMatrix, src::AbstractMatrix)
+    m = min(size(dest,1), size(src,1))
+    n = min(size(dest,2), size(src,2))
+    dest[1:m, 1:n] .= src[1:m, 1:n]
+    return dest
+end
+
 function load_models_into_hive!(hive::MultiTaskHive, model_dir::String)
     """Load pre-trained models into the hive from specified directory"""
     for (bee_idx, brain) in enumerate(hive.brains)
@@ -206,6 +223,15 @@ function load_models_into_hive!(hive::MultiTaskHive, model_dir::String)
             @warn "Model file not found for bee $(bee_idx): $model_path"
         end
     end
+    JLD2.@load joinpath(model_dir, "suppressed_tasks.jdl2") suppressed_tasks suppression_time_left
+    overwrite_overlap!(hive.suppressed_tasks, suppressed_tasks)
+    overwrite_overlap!(hive.suppression_start_times, suppression_time_left)
+    println("models have been loaded")
+    println("quick test")
+    println("are the first elements the same?: ")
+    println(hive.suppression_start_times[1,1] == suppression_time_left)
+    println(hive.suppressed_tasks[1,1] == suppressed_tasks[1,1])
+    return nothing
 end
 
 function run_single_simulation(config::Dict, output_dir::String, foldername::String; 
@@ -321,6 +347,7 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                 #using BSON
                 #BSON.@save model_path model_state
             end
+            JLD2.@save joinpath(epoch_dir, "suppressed_tasks.jdl2") suppressed_tasks=state_snapshot.suppressed_tasks suppression_time_left=state_snapshot.suppression_time_left
         end    
     end
     
@@ -339,11 +366,6 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                                 save_states=true,
                                 save_events=true,
                                 save_losses=true)
-    else        
-        #save_simulation_results(results, run_output_dir;
-                                #save_states=true,
-                                #save_events=true,
-                                #save_losses=false)
     end
 
     log_df = log_to_dataframe(results.log)

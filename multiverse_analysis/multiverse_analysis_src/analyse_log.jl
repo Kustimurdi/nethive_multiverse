@@ -26,7 +26,7 @@ function extract_task_ids(log::DataFrame, task_prefix::String="task_")::Vector{I
     return task_ids
 end
 
-
+ # the -1 comes from the fact that i added the id 0 for checking the original acc
 function compute_per_task_best(log::DataFrame, task_ids::Vector{Int}; task_prefix::String="task_")
     per_task_best = Dict{Int,Float64}()
     for tid in task_ids
@@ -369,7 +369,7 @@ function run_summary(log::DataFrame; task_prefix::String="task_", timecol::Symbo
                                             bee1col=bee1col, bee2col=bee2col, taskidcol=taskidcol, timecol=timecol)
 
     # per-bee count
-    n_bees = length(unique(vcat(log[!, bee1col], log[!, bee2col])))
+    n_bees = length(unique(vcat(log[!, bee1col], log[!, bee2col]))) - 1 # the -1 comes from the fact that i added the id 0 for checking the original acc
 
     # run-quality score (assumes task values scaled to [0,1] by default)
     p_end = run_score_mean_best_task_at_end

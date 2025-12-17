@@ -118,6 +118,35 @@ function save_simulation_results(results::NamedTuple, output_dir::String;
     return saved_files
 end
 
+function return_git_data()
+    git_commit = try
+        read(`git rev-parse HEAD`, String) |> strip
+    catch
+        "unknown"
+    end
+
+    git_dirty = try
+        !isempty(read(`git status --porcelain`, String))
+    catch
+        true
+    end
+
+    git_branch = try
+        read(`git branch --show-current`, String) |> strip
+    catch
+        "unknown"
+    end
+
+    return (
+        git_commit = git_commit,
+        git_dirty  = git_dirty,
+        git_branch = git_branch,
+        timestamp  = Dates.now(),
+        julia_version = VERSION,
+    )
+end
+
+
 function save_metadata_to_config(config::Dict, output_dir::String)
     if !isdir(output_dir)
         mkpath(output_dir)
@@ -135,6 +164,10 @@ function save_metadata_to_config(config::Dict, output_dir::String)
     
     # Add/update run metadata
     metadata["random_seed"] = seed  # Ensure consistent naming
+    git_data = return_git_data()
+    metadata["git_commit"] = git_data.git_commit
+    metadata["git_dirty"] = git_data.git_dirty
+    metadata["julia_version"] = git_data.julia_version
     
     filepath = joinpath(output_dir, "config.json")
     open(filepath, "w") do io
@@ -157,20 +190,6 @@ function save_task_mapping(task_mapping::Dict{Int, String}, output_dir::String)
     
     println("Task index mapping saved to: $filepath")
     return task_mapping
-end
-
-function save_log(log::GillespieEventLog, output_dir::String)
-    if !isdir(output_dir)
-        mkpath(output_dir)
-    end
-    
-    filepath = joinpath(output_dir, "event_log.json")
-    open(filepath, "w") do io
-        JSON3.pretty(io, log)
-    end
-    
-    println("Event log saved to: $filepath")
-    return log
 end
 
 function log_to_dataframe(log::GillespieEventLog)
@@ -205,4 +224,18 @@ function save_log_df(df::DataFrame, output_dir::String)
     
     println("Event log DataFrame saved to: $filepath")
     return df
+end
+
+function save_log(log::GillespieEventLog, output_dir::String)
+    if !isdir(output_dir)
+        mkpath(output_dir)
+    end
+    
+    filepath = joinpath(output_dir, "event_log.json")
+    open(filepath, "w") do io
+        JSON3.pretty(io, log)
+    end
+    
+    println("Event log saved to: $filepath")
+    return log
 end

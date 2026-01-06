@@ -52,7 +52,7 @@ function parse_slurm_args()
         "--time", "-t"
             help = "Job time limit (HH:MM:SS)"
             arg_type = String
-            default = "20:00:00"
+            default = "50:00:00"
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
@@ -328,7 +328,7 @@ function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String, 
             # Build export line using Char(36) so we never include a literal $ in the Julia source
             write(io, "export JULIA_DEPOT_PATH=\"")
             write(io, string(Char(36)))
-            write(io, "{SCRATCH:-/scratch}/")
+            write(io, "SCRATCH:-/scratch}/")
             write(io, string(Char(36)))
             write(io, "USER/julia_depot/")
             write(io, string(Char(36)))

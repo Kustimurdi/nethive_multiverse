@@ -1,6 +1,6 @@
 println("hallo1")
-#using Pkg
-#Pkg.activate("./env_nethive_multiverse/")
+using Pkg
+Pkg.activate("./env_nethive_multiverse/")
 #Pkg.instantiate()
 
 # Load packages directly (they should be available via JULIA_PROJECT)
@@ -11,13 +11,12 @@ using Distributions
 using Flux
 using JSON3
 using LinearAlgebra
-#using MLDatasets
+using MLDatasets
 using Random
 using Statistics
 using Dates
 using JLD2
 println("hallo3")
-exit()
 
 # Load our modules
 include("src/data/loaders.jl")
@@ -229,7 +228,7 @@ function load_models_into_hive!(hive::MultiTaskHive, model_dir::String)
     println("models have been loaded")
     println("quick test")
     println("are the first elements the same?: ")
-    println(hive.suppression_start_times[1,1] == suppression_time_left)
+    println(hive.suppression_start_times[1,1] == suppression_time_left[1,1])
     println(hive.suppressed_tasks[1,1] == suppressed_tasks[1,1])
     return nothing
 end
@@ -317,7 +316,7 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     println("Starting simulation...")
     # Run simulation
     start_time = time()
-    results = run_gillespie_simulation!(hive, loaders; verbose=verbose)
+    results = run_gillespie_simulation!(hive, loaders, output_dir, foldername; verbose=verbose)
 
     end_time = time()
     

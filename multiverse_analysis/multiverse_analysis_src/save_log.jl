@@ -9,7 +9,20 @@ using CSV
 using JSON3
 using Dates
 
-const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c1000e_lr5_rest"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c1000e_dt_low_between"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_all_interaction_rate_extra_vals"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_between_vals_high_dt"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_dt_mid_between"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_high_interact_all_dt"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_interact_low_intermed_vals"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e50+500dt"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e100dt"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c1000e_interact_low_intermed_vals"
+#const DEFAULT_SWEEP = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t15c1000e_all_ir_vals_low_dt"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt_10+"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt10-"
+const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt_10=-_int100-"
 
 include(joinpath(@__DIR__, "load_data.jl"))
 include(joinpath(@__DIR__, "analyse_log.jl"))

@@ -5,7 +5,11 @@ folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/res
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/save_model_run"
 #folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/load_model"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/bt_sweep"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e100dt"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e50+500dt"
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c1000e_lr5"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_lr5"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000"
 data_path = joinpath(folder_path, "data/")
 master_df = build_master_dataframe(data_path)
 ```
@@ -18,8 +22,8 @@ filter_df = copy(master_df)
 #filter_df = filter(row -> row.n_bees == 4, filter_df)
 #filter_df = filter(row -> row.n_tasks == 5, filter_df)
 #filter_df = filter(row -> row.learning_rate == 5.0e-5, filter_df)
-filter_df = filter(row -> row.interaction_rate == 500.0, filter_df)
-filter_df = filter(row -> row.dead_time == 1000.0, filter_df)
+filter_df = filter(row -> row.interaction_rate == 500, filter_df)
+filter_df = filter(row -> row.dead_time == 1000, filter_df)
 #filter_df = filter(row -> row.learning_rate == 0.0005, master_df)
 #filter_df = filter(row -> row.dataset_names == "[\"bank\"]", filter_df)
 #filter_df = filter(row -> row.lambda_sensitivity == 100, filter_df)
@@ -33,6 +37,7 @@ println("nrow $(nrow(filter_df))")
 
 ```{julia}
 run_path = filter_df.run_path[1]
+run_path = failed_run.run_path[1]
 
 #run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/bt_sweep/data/param_3_rep_1"
 event_log = load_log(run_path)
@@ -43,7 +48,11 @@ mapping = load_task_index_mapping(run_path)
 # filter the data
 
 ```{julia}
-bee2log = filter(row -> row.bee1_id ==2, event_log)
+bee1_events = filter(row -> row.bee1_id == 1 && row.bee1_id != row.bee2_id && row.task_id == 4 && row.time > 7000.0, event_log)
+println("#suppressions by 4: ", nrow(filter(row -> row.bee2_id == 4, bee1_events)))
+println("#suppressions by 5: ", nrow(filter(row -> row.bee2_id == 5, bee1_events)))
+println("#suppressions by 6: ", nrow(filter(row -> row.bee2_id == 6, bee1_events)))
+println("#suppressions by 8: ", nrow(filter(row -> row.bee2_id == 8, bee1_events)))
 ```
 # plot one bee for one task
 
@@ -78,7 +87,7 @@ fig = Makie.Figure(resolution=(1200, 400*n_bees))
 add_legend = true
 for (i, bee) in enumerate(1:n_bees)
     println("bee: $bee")
-    ax = Makie.Axis(fig[i,1], xlabel="time", ylabel="accuracy", title="Evolution of Accuracy for Bee $bee Across All Tasks")
+    ax = Makie.Axis(fig[i,1], xlabel="time", ylabel="accuracy", title="Evolution of Accuracy for neural network $bee Across All Tasks")
     plot_bee_all_tasks(event_log, bee, ax=ax, mapping=mapping, add_legend=add_legend, linewidth=linewidth, markersize=markersize, add_markers=true)
     add_legend = false
 end
@@ -86,6 +95,9 @@ end
 
 ```{julia}
 display(fig)
+```
+
+```{julia}
 ```
 
 ```{julia}

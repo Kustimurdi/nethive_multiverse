@@ -1,0 +1,123 @@
+```{julia}
+folder_path_1 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_lr5"
+folder_path_2 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e100dt"
+folder_path_3 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000"
+folder_path_4 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt10-"
+folder_path_5 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt_10+"
+```
+
+```{julia}
+summaries_1 = CSV.read(joinpath(folder_path_1, "summaries.csv"), DataFrame)
+summaries_2 = CSV.read(joinpath(folder_path_2, "summaries.csv"), DataFrame)
+summaries_3 = CSV.read(joinpath(folder_path_3, "summaries.csv"), DataFrame)
+summaries_4 = CSV.read(joinpath(folder_path_4, "summaries.csv"), DataFrame)
+summaries_5 = CSV.read(joinpath(folder_path_5, "summaries.csv"), DataFrame)
+```
+
+# creating one filtered summary
+
+```{julia}
+select!(summaries_2, Not([:git_commit, :git_dirty, :julia_version]))
+select!(summaries_3, Not([:git_commit, :git_dirty, :julia_version]))
+select!(summaries_4, Not([:git_commit, :git_dirty, :julia_version]))
+select!(summaries_5, Not([:git_commit, :git_dirty, :julia_version]))
+```
+
+
+```{julia}
+sum1_filt = filter(row -> row.dead_time < 50.0 && row.interaction_rate < 1000.0, summaries_1)
+big_sum = vcat(sum1_filt, summaries_2, summaries_3, summaries_4, summaries_5)
+```
+
+```{julia}
+f_sum = copy(big_sum)
+folder_path = folder_path_2
+```
+
+# filtering the data
+
+```{julia}
+filter_1 = :lambda_sensitivity
+filter_1_val = 100
+filter_2 = :learning_rate
+filter_2_val = 1.0e-5
+filter_2_val = 5.0e-5
+f_sum = filter(row -> row[filter_1] == filter_1_val, f_sum)
+f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
+#f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
+#f_sum = filter(row -> row.learning_rate == 5.0e-5, f_sum)
+#f_sum = filter(row -> row.dead_time == 5.0, f_sum)
+```
+
+# aggregating the data
+
+```{julia}
+xcol = "dead_time"
+ycol = "interaction_rate"
+#xcol = "n_bees"
+#ycol = "n_tasks"
+metric_col = :coverage_fraction
+groupcols = [Symbol(xcol), Symbol(ycol)]
+agg = combine(groupby(f_sum, groupcols),
+              metric_col => mean => :mean_coverage,
+              metric_col => std  => :std_coverage,
+              metric_col => length => :coverage_count,
+              :p_end_mean => mean => :mean_score)
+
+sort!(agg, groupcols)
+```
+
+# prepare data for the heatmap
+
+```{julia}
+xcol = Symbol(xcol)
+ycol = Symbol(ycol)
+#valcol = :mean_coverage
+valcol = :mean_score
+
+xs = sort(unique(agg[:, xcol]))
+ys = sort(unique(agg[:, ycol]))
+xi = Dict(v => i for (i,v) in enumerate(xs))
+yi = Dict(v => i for (i,v) in enumerate(ys))
+
+mat = fill(NaN, length(xs), length(ys))
+for r in eachrow(agg)
+    mat[xi[r[xcol]], yi[r[ycol]]] = r[valcol]
+end
+```
+
+```{julia}
+title = "2b2t15c: $(string(valcol))"
+heat_fig = Figure(resolution=(800,600))
+ax = Axis(heat_fig[1,1], xlabel = string(xcol), ylabel = string(ycol), title=title)
+
+# draw on integer grid and keep the mapping via tick labels
+# plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
+ax.xticks = (1:length(xs), string.(xs))
+ax.yticks = (1:length(ys), string.(ys))
+
+Colorbar(heat_fig[1,2], hm)
+```
+
+```{julia}
+display(heat_fig)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/"
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "all_dt_og_int"
+name = "2b2t_heatmap_$(string(valcol))_$(descriptor)"
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), heat_fig)
+save(joinpath(save_path, "$(name).png"), heat_fig)
+```
+
+```{julia}
+filt_sum = filter(row -> row.interaction_rate == 500 && row.dead_time == 1000, summaries_3)
+failed_run = filter(row -> row.coverage_fraction == 0.5, filt_sum)
+```

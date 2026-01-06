@@ -310,7 +310,8 @@ function gillespie_step!(hive::MultiTaskHive, loaders::Dict)
     return true, selected_action, released_tasks  # Event occurred successfully
 end
 
-function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=false)
+function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_dir, foldername; verbose=false)
+    println("save nn: $(hive.config.save_nn_epochs)")
 
     production_count = zeros(Int, hive.config.n_epochs, hive.config.n_bees, hive.config.n_bees, hive.config.n_tasks)
     suppression_count = zeros(Int, hive.config.n_epochs, hive.config.n_bees, hive.config.n_bees, hive.config.n_tasks)
@@ -359,12 +360,34 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict; verbose=f
             #Production Events: $(sum(production_count[epoch, :,:, :])), 
             #Suppression Events: $(sum(suppression_count[epoch,:, :, :]))")
         end
+
+        if epoch % 50 == 0
+            println("file sollte gespeichert werden irgendwo in: $(output_dir), epoch: $epoch")
+            dir_path = joinpath(output_dir, foldername)
+            dir_path = joinpath(dir_path, "check_files/")
+            println("dir path: $dir_path")
+            if !isdir(dir_path)
+                mkpath(dir_path)
+            end
+            name = "epoch_$epoch.txt"
+            write_empty_file(dir_path, name)
+            println("should have been written")
+            is_file = isfile(joinpath(dir_path, name))
+            println("is file: $is_file")
+        end
     end
 
     return (log = log, model_states = model_states, production_count = production_count, suppression_count = suppression_count, 
             performance_history = performance_history, loss_history = loss_history, 
             final_time=hive.current_time, total_events=sum(production_count) + sum(suppression_count))
 end
+
+function write_empty_file(dir::String, name::String)
+    filepath = joinpath(dir, name)
+    touch(filepath) 
+    return nothing
+end
+
 
 function log_events(log::GillespieEventLog, hive::MultiTaskHive, action)
     bee_accs = hive.queen_genes[action.bee1, :]

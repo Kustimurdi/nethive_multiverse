@@ -1,0 +1,161 @@
+```{julia}
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_wout_og_2026-01-21_1934.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
+st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", DataFrame)
+```
+
+```{julia}
+#st.n_bees = st.n_agents ./ 2
+st.n_tasks .= 2
+#select!(st, Not(:n_agents))
+CSV.write("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", st)
+```
+
+```{julia}
+th = 0.9
+ls = 100
+df_sel = subset(
+    st, 
+    :threshold => ByRow(==(th)),
+    :lambda_sensitivity => ByRow(==(ls)))
+```
+
+```{julia}
+df_last = combine(groupby(df_sel, :param_dir)) do sdf
+    sdf[argmax(sdf.time), :]
+end
+```
+
+```{julia}
+df_sel.any_ratio = df_sel.any_geq ./ df_sel.n_bees
+df_sel.exactly_ratio = df_sel.exactly_one_geq ./ df_sel.n_bees
+df_sel.unique_ratio = df_sel.unique_specialist ./ df_sel.n_bees
+```
+
+```{julia}
+agg = combine(
+    groupby(df_sel, [:interaction_rate, :dead_time]),
+    :unique_ratio => mean => :unique_ratio_mean,
+    :unique_ratio => std  => :unique_ratio_std,
+    :exactly_ratio => mean => :exactly_ratio_mean,
+    :exactly_ratio => std  => :exactly_ratio_std,
+    :any_ratio => mean => :any_ratio_mean,
+    :any_ratio => std  => :any_ratio_std,
+    :avg_agents_geq_per_task => mean => :avg_agents_mean,
+    :avg_agents_geq_per_task => std  => :avg_agents_std,
+    nrow => :n_rows,   # how many samples contributed (often = #runs, if 1 row per run per time)
+    :param_dir => (x -> length(unique(x))) => :n_runs
+)
+```
+
+```{julia}
+xcol = :interaction_rate
+ycol = :dead_time
+#valcol = :unique_ratio_mean
+#valcol = :unique_ratio_std
+#valcol = :avg_agents_mean
+valcol = :avg_agents_std
+#valcol = :any_ratio_mean
+#valcol = :any_ratio_std
+
+xs = sort(unique(agg[:, xcol]))
+ys = sort(unique(agg[:, ycol]))
+xi = Dict(v => i for (i,v) in enumerate(xs))
+yi = Dict(v => i for (i,v) in enumerate(ys))
+
+mat = fill(NaN, length(xs), length(ys))
+for r in eachrow(agg)
+    mat[xi[r[xcol]], yi[r[ycol]]] = r[valcol]
+end
+mat = mat'
+```
+
+```{julia}
+title = "2b2t15c: $(string(valcol))"
+heat_fig = Figure(resolution=(800,600))
+labelsize = 32
+ticklabelsize = 28
+ax = Axis(heat_fig[1,1], 
+            xlabel = L"\text{dead time } t_d", 
+            ylabel = L"\text{interaction rate prefactor } \alpha",
+            xlabelsize = labelsize,
+            ylabelsize = labelsize,
+            xticklabelsize = ticklabelsize,
+            yticklabelsize = ticklabelsize)
+            #title=title)
+#ax = Axis(heat_fig[1,1], xlabel = "dead time r"$t_d$"", ylabel = "interaction rate r"$\alpha$"", title=title)
+
+# draw on integer grid and keep the mapping via tick labels
+# plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
+
+powers = 10.0 .^(-2:3)
+xtick_vals = intersect(xs, powers)
+ytick_vals = intersect(ys, powers)
+pushfirst!(xtick_vals, 0.01)
+pushfirst!(ytick_vals, 0.01)
+xtick_pos = [xi[v] for v in xtick_vals] 
+ytick_pos = [yi[v] for v in ytick_vals] 
+ticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
+#ax.xticks = (xtick_pos, string.(xtick_vals))
+#ax.yticks = (ytick_pos, string.(ytick_vals))
+ax.xticks = (xtick_pos, ticks)
+ax.yticks = (ytick_pos, ticks)
+cb = Colorbar(heat_fig[1,2], 
+        hm,
+        #label = L"\text{Average of the highest Accuracies}", #IMPORTANT: check if it corresponds to the depicted value
+        #label = L"\text{Average of the Coverage Fraction}",
+        #label = L"\text{Standard deviation of the highest Accuracy}",
+        #label = L"\text{Standard deviation of the Coverage Fraction}",
+        label = "$(valcol)",
+        labelsize = labelsize,
+        ticklabelsize = ticklabelsize)
+#cb.ticks = ([0.85, 0.90, 0.95], [L"0.85", L"0.90", L"0.95"]) #mean coverage
+#cb.ticks = ([0.6, 0.7, 0.8, 0.9, 1.0], [L"0.6", L"0.7", L"0.8", L"0.9", L"1.0"]) #mean accuracy
+#cb.ticks = ([0.0, 0.1, 0.2, 0.3, 0.4], [L"0.0", L"0.1", L"0.2", L"0.3", L"0.4"]) #std accuracy
+#cb.ticks = ([0.0, 0.1, 0.2, 0.3], [L"0.0", L"0.1", L"0.2", L"0.3"]) #std coverage
+```
+
+```{julia}
+display(heat_fig)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "2b2t_plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "$(valcol)"
+lr = st.learning_rate[1]
+name = "2b2t_heatmap_lr_$(lr)_$(string(valcol))"
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), heat_fig)
+save(joinpath(save_path, "$(name).png"), heat_fig)
+```
+
+```{julia}
+inspect = subset(
+    st, 
+    :threshold => ByRow(==(th)),
+    :interaction_rate => ByRow(in([500])),
+    :dead_time => ByRow(x -> x < 1.0))
+```
+
+```{julia}
+roots = unique(inspect.root)
+for i in 1:length(roots)
+    println(roots[i])
+end
+```
+
+```{julia}
+ex = subset(
+    st,
+    :threshold => ByRow(==(th)),
+    :dead_time => ByRow(x -> x < 1.0),
+    :interaction_rate => ByRow(==(100))
+)
+println(unique(ex.root)[1])
+```

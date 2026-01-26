@@ -26,6 +26,33 @@ function save_states_csv(results::NamedTuple, output_dir::String)
     return df
 end
 
+function save_activity_csv(results::NamedTuple, output_dir::String)
+    if !isdir(output_dir)
+        mkpath(output_dir)
+    end
+    
+    # Prepare data - pure simulation data only
+    n_time_points, n_bees, n_tasks = size(results.suppression_history)
+    data = []
+    
+    for t in 1:n_time_points
+        for bee in 1:n_bees
+            for task in 1:n_tasks
+                task_value = results.suppression_history[t, bee, task]
+                push!(data, (epoch=(t-1), bee_id=bee, task_id=task, suppressed=task_value))
+            end
+        end
+    end
+    
+    # Convert to DataFrame and save with fixed filename
+    df = DataFrame(data)
+    
+    filepath = joinpath(output_dir, "activity.csv")
+    CSV.write(filepath, df)
+    
+    println("Task evolution saved to: $filepath")
+    return df
+end
 function save_losses_csv(results::NamedTuple, output_dir::String)
     if !isdir(output_dir)
         mkpath(output_dir)
@@ -92,6 +119,7 @@ end
 
 function save_simulation_results(results::NamedTuple, output_dir::String;
                                 save_states::Bool=true,
+                                save_activity::Bool=true,
                                 save_events::Bool=false,
                                 save_losses::Bool=false)
     
@@ -102,6 +130,11 @@ function save_simulation_results(results::NamedTuple, output_dir::String;
     if save_states
         save_states_csv(results, output_dir)
         push!(saved_files, "states.csv")
+    end
+    
+    if save_activity
+        save_activity_csv(results, output_dir)
+        push!(saved_files, "activity.csv")
     end
     
     # Optional detailed data

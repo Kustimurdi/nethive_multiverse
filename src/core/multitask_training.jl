@@ -97,6 +97,10 @@ function calc_classification_accuracy(model, dataloader; num_batches::Int=typema
     total = 0
     
     for (x_batch, y_batch) in Iterators.take(dataloader, num_batches)
+        @show size(x_batch) eltype(x_batch) size(y_batch) eltype(y_batch)
+        @show size(x_batch, 1)
+        @show unique(sum(x_batch[12:end, :]; dims=1))  # nur falls du vermutest: one-hot task block
+
         # Get predicted class indices (highest output)
         preds = Flux.onecold(model(x_batch))
         #println("preds: , $preds")
@@ -166,6 +170,10 @@ function evaluate_bee_on_task(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, 
     end
     
     model = hive.brains[bee_idx]
+    (x0, y0) = first(test_loader)
+    @info "test_loader first batch" size(x0) eltype(x0) size(y0) eltype(y0)
+
+
     accuracy = calc_classification_accuracy(model, test_loader)
     loss = calc_classification_loss(model, test_loader)
     

@@ -1,0 +1,54 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/plots/cum.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/plots/avg_time_bt_events.jl")
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/2b2t15c10000e10+dt90+int/data/param_85_rep_6"
+elog = load_log(run_path)
+```
+
+```{julia}
+dt_df = mean_dt_per_agent_task(elog)
+dt_df = dt_df[dt_df.n_events .>= 3, :] #drop unstable ones
+```
+
+```{julia}
+save_directory = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_plotting/data/mean_dt/"
+if !isdir(save_directory)
+    mkdir(save_directory)
+end
+batchname = basename(dirname(dirname(run_path)))
+base = basename(run_path)
+name = "mean_dt_$(batchname)_$(base).CSV"
+CSV.write(joinpath(save_directory, name), dt_df)
+```
+
+```{julia}
+fig = plot_dt_per_agent(dt_df)
+```
+
+# calculating the interaction rates in both directions
+
+```{julia}
+cfg = load_config(joinpath(run_path, "config.json"))
+a1 = filter(row -> row.time > 10 && row.bee1_id == 1, elog)
+a2 = filter(row -> row.time > 10 && row.bee1_id == 2, elog)
+acc_a1t1 = unique(a1.task_1)
+acc_a1t2 = unique(a1.task_2)
+acc_a2t1 = unique(a2.task_1)
+acc_a2t2 = unique(a2.task_2)
+println("unique accuracies for agent 1: acc_task1 = ", unique(a1.task_1))
+println("unique accuracies for agent 1: acc_task2 = ", unique(a1.task_2))
+println("unique accuracies for agent 2: acc_task1 = ", unique(a2.task_1))
+println("unique accuracies for agent 2: acc_task2 = ", unique(a2.task_2))
+```
+
+```{julia}
+int_pref = cfg.interaction_rate[1]
+sig_sens = cfg.lambda_sensitivity[1]
+#sig_sens = 10000
+sigmoid_a1 = 1/(1 + exp(-sig_sens*(acc_a2t1[1] - acc_a1t1[1])))
+sigmoid_a2 = 1/(1 + exp(-sig_sens*(acc_a1t1[1] - acc_a2t1[1])))
+int_rate_task1_a1 = int_pref * acc_a1t1[1] * acc_a2t1[1] * sigmoid_a1
+int_rate_task1_a2 = int_pref * acc_a1t1[1] * acc_a2t1[1] * sigmoid_a2
+println("interaction rates, agent 1 getting suppressed by agent 2 in task 1: ", int_rate_task1_a1)
+println("interaction rates, agent 2 getting suppressed by agent 1 in task 1: ", int_rate_task1_a2)
+```

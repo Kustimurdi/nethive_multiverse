@@ -1,0 +1,70 @@
+```{julia}
+#run_path = filter_df.run_path[1]
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/5b5t_01lr_illustrate/data/param_8_rep_1"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/2b2t15c10000e10+dt90+int/data/param_85_rep_6"
+```
+
+```{julia}
+event_log = load_log(run_path)
+config = load_config(joinpath(run_path, "config.json"))
+mapping = load_task_index_mapping(run_path)
+select!(event_log, Not(:bee2_id, :task_id))
+```
+
+```{julia}
+task_cols = names(event_log, r"^task_")
+K = length(task_cols)
+eps = 1e-12
+logK = log(K)
+
+H = Vector{Float64}(undef, nrow(event_log))
+
+@inbounds for (i, r) in enumerate(eachrow(event_log))
+    s = 0.0
+    # sum
+    for c in task_cols
+        v = r[c]
+        s += v + eps
+    end
+    # entropy
+    h = 0.0
+    invs = 1.0 / s
+    for c in task_cols
+        p = (r[c] + eps) * invs
+        h -= p * log(p)
+    end
+    H[i] = h / logK   # normalized to [0,1]
+end
+
+event_log.entropy = H
+```
+
+```{julia}
+axpos = (1,1)
+labelsize = 22
+ticklabelsize = 20
+acc_evofig = Makie.Figure(size = (800, 600))
+ax = Makie.Axis(acc_evofig[axpos[1], axpos[2]], 
+        xlabel = L"\text{Simulation Time}", 
+        ylabel = L"\text{Accuracy Entropy per Agent}",
+        #title = "Evolution of Accuracy of the best performing agent per task",
+        xlabelsize = labelsize,
+        ylabelsize = labelsize,
+        xticklabelsize = ticklabelsize,
+        yticklabelsize = ticklabelsize,
+        )
+ax.xticks = Makie.LinearTicks(7)
+agent_ids = unique(event_log.bee1_id)
+for id in agent_ids
+    bee_log = filter(row -> row.bee1_id == id, event_log)
+    Makie.lines!(bee_log.time, bee_log.entropy)
+end
+```
+
+```{julia}
+display(acc_evofig)
+```
+
+```{julia}
+
+```

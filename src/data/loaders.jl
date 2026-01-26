@@ -44,7 +44,7 @@ train_loader = loaders[:mnist]["train"]
 """
 function prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int=32)
     @info "Preparing multi-task setup for datasets: $dataset_names"
-    
+    println("am now in prepare_multitask_setup") 
     # Step 1: Calculate universal dimensions
     max_input_dim, max_output_dim = calculate_universal_dimensions(dataset_names)
     @info "Universal dimensions" max_input_dim=max_input_dim max_output_dim=max_output_dim
@@ -65,10 +65,18 @@ function prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int=
             "train" => train_loader,
             "test" => test_loader
         )
+        println("Created loaders for dataset: $dataset_name")
+        println("  Train batches: $(length(train_loader)), Test batches: $(length(test_loader))")
+        println("  Input dim: $(dataset.padded_input_dim), Output classes: $(dataset.n_classes)")
     end
     
     # Step 4: Create model template function
     model_template = create_universal_model_template(max_input_dim, max_output_dim)
+    println("Created universal model template.")
+    println("Each call to model_template() returns a fresh model with random weights.")
+    println("Model architecture:")
+    sample_model = model_template()
+    println(sample_model)
     
     @info "Multi-task setup completed" n_datasets=length(dataset_names) batch_size=batch_size
     

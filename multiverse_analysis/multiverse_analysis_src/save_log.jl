@@ -22,7 +22,14 @@ using Dates
 #const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000"
 #const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt_10+"
 #const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt10-"
-const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt_10=-_int100-"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c1000e_dt_10=-_int100-"
+#const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt10+int100-
+#const DEFAULT_SWEEP = "/project/theorie/n/N.Pfaffenzeller/results_project/results/2b2t/2b2t15c10000e10+dt100-int"
+#const DEFAULT_SWEEP = "/project/theorie/n/N.Pfaffenzeller/results_project/results/2b2t/2b2t15c10000e10+dt90+int"
+#const DEFAULT_SWEEP = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/10b10t15c1000e10-dt70+int"
+#const DEFAULT_SWEEP = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/2b2t15c_20-dt100+int"
+const DEFAULT_SWEEP = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e100dt"
+
 
 include(joinpath(@__DIR__, "load_data.jl"))
 include(joinpath(@__DIR__, "analyse_log.jl"))

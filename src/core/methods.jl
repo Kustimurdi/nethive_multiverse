@@ -317,9 +317,12 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
     suppression_count = zeros(Int, hive.config.n_epochs, hive.config.n_bees, hive.config.n_bees, hive.config.n_tasks)
     performance_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
     loss_history = zeros(Float64, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
+    suppression_history = zeros(Bool, 1 + hive.config.n_epochs, hive.config.n_bees, hive.config.n_tasks)
 
     log = GillespieEventLog()
     model_states = Vector{Any}()
+
+    println("Starting Gillespie simulation for $(hive.config.n_epochs) epochs.")
 
     update_all_bees!(hive, loaders)
     for b in 1:hive.n_bees
@@ -328,6 +331,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
 
     performance_history[1, :, :] .= hive.queen_genes
     loss_history[1, :, :] .= hive.losses
+    suppression_history[1, :, :] .= hive.suppressed_tasks
 
     for epoch in 1:hive.config.n_epochs
         while hive.current_time < epoch 
@@ -337,13 +341,14 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
             if !event_occurred
                 break  # No more events possible
             end
-            document_event!(selected_action, epoch, production_count, suppression_count)
-            log_events(log, hive, selected_action)
+            #document_event!(selected_action, epoch, production_count, suppression_count)
+            #log_events(log, hive, selected_action)
 
         end
 
         performance_history[1+epoch, :, :] .= hive.queen_genes
         loss_history[1+epoch, :, :] .= hive.losses
+        suppression_history[1+epoch, :, :] .= hive.suppressed_tasks
 
         if (hive.config.save_nn_epochs) > 0 && (epoch % hive.config.save_nn_epochs == 0)
             states = Vector{Any}(undef, hive.n_bees)
@@ -361,7 +366,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
             #Suppression Events: $(sum(suppression_count[epoch,:, :, :]))")
         end
 
-        if epoch % 50 == 0
+        if epoch % 1000 == 0
             println("file sollte gespeichert werden irgendwo in: $(output_dir), epoch: $epoch")
             dir_path = joinpath(output_dir, foldername)
             dir_path = joinpath(dir_path, "check_files/")
@@ -378,7 +383,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
     end
 
     return (log = log, model_states = model_states, production_count = production_count, suppression_count = suppression_count, 
-            performance_history = performance_history, loss_history = loss_history, 
+            performance_history = performance_history, loss_history = loss_history, suppression_history = suppression_history,
             final_time=hive.current_time, total_events=sum(production_count) + sum(suppression_count))
 end
 

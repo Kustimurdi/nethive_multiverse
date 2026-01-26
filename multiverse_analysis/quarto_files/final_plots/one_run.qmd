@@ -1,0 +1,49 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t_time_test/data/param_5_rep_1"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t_time_test/"
+data_path = joinpath(folder_path, "data/")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+df = subset(
+    master_df,
+    :n_epochs => ByRow(==(10000))
+    #:learning_rate => ByRow(==()))
+)
+run_path = df.run_path[2]
+```
+
+```{julia}
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_76_rep_1"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_92_rep_1"
+states = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+cfg = load_config(joinpath(run_path, "config.json"))
+```
+
+```{julia}
+one_fig = Makie.Figure(resolution = (800, cfg[!, :n_bees][1]*300))
+agentids = unique(states.bee_id)
+taskids = unique(states.task_id)
+for (i,t) in enumerate(taskids)
+    t_df = subset(
+        states,
+        :task_id => ByRow(==(t))
+    )
+    ax = Makie.Axis(one_fig[i,1], xlabel="epoch", ylabel="accuracy")
+    for a in agentids
+        a_df = subset(
+            t_df,
+            :bee_id => ByRow(==(a))
+        )
+        Makie.lines!(ax, a_df.epoch, a_df.accuracies)
+    end
+end
+```
+
+```{julia}
+one_fig
+```
+
+```{julia}

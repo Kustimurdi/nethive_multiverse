@@ -1,0 +1,11 @@
+```{julia}
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/2b2t15c10000e10+dt90+int/data/param_85_rep_6"
+elog = load_log(run_path)
+```
+
+```{julia}
+under_dt = filter(row -> row.time < 100, elog)
+over_dt = filter(row -> row.time >= 100, elog)
+training = filter(row -> row.bee1_id == row.bee2_id, elog)
+interaction = filter(row -> row.bee1_id != row.bee2_id && row.bee2_id != 0, elog)
+```

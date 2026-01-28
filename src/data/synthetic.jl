@@ -165,11 +165,11 @@ function generate_rotated_tasks(dataset::NamedTuple, n_tasks::Int)
             test_data = (test_x, rot_test_labels),
             rotation = task_id
         ))
-        println("data for task $(task_id):")
-        println("  Train dataset size (length of rot_train_labels): $(length(rot_train_labels))")
-        println("  Test dataset size: $(length(rot_test_labels))")
-        println("train labels min=", minimum(rot_train_labels), " max=", maximum(rot_train_labels))
-        println("test  labels min=", minimum(rot_test_labels), " max=", maximum(rot_test_labels))
+        #println("data for task $(task_id):")
+        #println("  Train dataset size (length of rot_train_labels): $(length(rot_train_labels))")
+        #println("  Test dataset size: $(length(rot_test_labels))")
+        #println("train labels min=", minimum(rot_train_labels), " max=", maximum(rot_train_labels))
+        #println("test  labels min=", minimum(rot_test_labels), " max=", maximum(rot_test_labels))
     end
 
     return tasks

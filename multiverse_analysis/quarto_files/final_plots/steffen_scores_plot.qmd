@@ -1,24 +1,30 @@
 ```{julia}
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
-#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_wout_og_2026-01-21_1934.csv", DataFrame)
+st1 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_wout_og_2026-01-21_1934.csv", DataFrame)
+st2 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_og_vals_2026-01-27_1611.csv", DataFrame)
+select!(st2, Not(:n_epochs, :avg_agents_geq_per_task))
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
-st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", DataFrame)
-```
-
-```{julia}
-#st.n_bees = st.n_agents ./ 2
-st.n_tasks .= 2
-#select!(st, Not(:n_agents))
-CSV.write("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", st)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_3b3t_car_iris_wine_2026-01-26_1909.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_5-6lr_2026-01-27_1349.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_2026-01-27_1528.csv", DataFrame)
+st = vcat(st1, st2)
 ```
 
 ```{julia}
 th = 0.9
 ls = 100
+lrs = unique(st.learning_rate)
+lr = lrs[1]
+#lr = 0.00001
+#lr = 0.00005
+#lr = 0.000005
 df_sel = subset(
     st, 
     :threshold => ByRow(==(th)),
-    :lambda_sensitivity => ByRow(==(ls)))
+    #:learning_rate => ByRow(==(lr))
+    #:lambda_sensitivity => ByRow(==(ls))
+)
 ```
 
 ```{julia}
@@ -28,22 +34,29 @@ end
 ```
 
 ```{julia}
-df_sel.any_ratio = df_sel.any_geq ./ df_sel.n_bees
-df_sel.exactly_ratio = df_sel.exactly_one_geq ./ df_sel.n_bees
-df_sel.unique_ratio = df_sel.unique_specialist ./ df_sel.n_bees
+df_last.n_bees .= df_last.n_agents
+```
+
+```{julia}
+#df_sel.any_ratio = df_sel.any_geq ./ df_sel.n_bees
+#df_sel.exactly_ratio = df_sel.exactly_one_geq ./ df_sel.n_bees
+#df_sel.unique_ratio = df_sel.unique_specialist ./ df_sel.n_bees
+df_last.any_ratio = df_last.any_geq ./ df_last.n_bees
+df_last.exactly_ratio = df_last.exactly_one_geq ./ df_last.n_bees
+df_last.unique_ratio = df_last.unique_specialist ./ df_last.n_bees
 ```
 
 ```{julia}
 agg = combine(
-    groupby(df_sel, [:interaction_rate, :dead_time]),
+    groupby(df_last, [:interaction_rate, :dead_time]),
     :unique_ratio => mean => :unique_ratio_mean,
     :unique_ratio => std  => :unique_ratio_std,
     :exactly_ratio => mean => :exactly_ratio_mean,
     :exactly_ratio => std  => :exactly_ratio_std,
     :any_ratio => mean => :any_ratio_mean,
     :any_ratio => std  => :any_ratio_std,
-    :avg_agents_geq_per_task => mean => :avg_agents_mean,
-    :avg_agents_geq_per_task => std  => :avg_agents_std,
+    #:avg_agents_geq_per_task => mean => :avg_agents_mean,
+    #:avg_agents_geq_per_task => std  => :avg_agents_std,
     nrow => :n_rows,   # how many samples contributed (often = #runs, if 1 row per run per time)
     :param_dir => (x -> length(unique(x))) => :n_runs
 )
@@ -53,9 +66,9 @@ agg = combine(
 xcol = :interaction_rate
 ycol = :dead_time
 #valcol = :unique_ratio_mean
-#valcol = :unique_ratio_std
+valcol = :unique_ratio_std
 #valcol = :avg_agents_mean
-valcol = :avg_agents_std
+#valcol = :avg_agents_std
 #valcol = :any_ratio_mean
 #valcol = :any_ratio_std
 
@@ -88,20 +101,23 @@ ax = Axis(heat_fig[1,1],
 
 # draw on integer grid and keep the mapping via tick labels
 # plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+println("2dawg")
 hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
-
+println("dawg")
 powers = 10.0 .^(-2:3)
+powers = round.(powers, digits=5)
 xtick_vals = intersect(xs, powers)
 ytick_vals = intersect(ys, powers)
-pushfirst!(xtick_vals, 0.01)
-pushfirst!(ytick_vals, 0.01)
+println("3dawg")
 xtick_pos = [xi[v] for v in xtick_vals] 
 ytick_pos = [yi[v] for v in ytick_vals] 
-ticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
-#ax.xticks = (xtick_pos, string.(xtick_vals))
-#ax.yticks = (ytick_pos, string.(ytick_vals))
-ax.xticks = (xtick_pos, ticks)
-ax.yticks = (ytick_pos, ticks)
+println("4dawg")
+#ticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
+ax.xticks = (xtick_pos, string.(xtick_vals))
+ax.yticks = (ytick_pos, string.(ytick_vals))
+println("5dawg")
+#ax.xticks = (xtick_pos, ticks)
+#ax.yticks = (ytick_pos, ticks)
 cb = Colorbar(heat_fig[1,2], 
         hm,
         #label = L"\text{Average of the highest Accuracies}", #IMPORTANT: check if it corresponds to the depicted value

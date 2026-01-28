@@ -1,25 +1,51 @@
 ```{julia}
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
-run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t_time_test/data/param_5_rep_1"
 folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t_time_test/"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_real_test2"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t2000e_car_iris_wine_sweep"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t15c10000e5-6lr100ls_full_phase_diagram"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_plastic"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t2000e_car_wine_wdbc"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_wine_bank"
 data_path = joinpath(folder_path, "data/")
 master_df = build_master_dataframe(data_path)
 ```
 
 ```{julia}
+println("master df unique agent number: ",        unique(master_df.n_bees))
+println("master df unique task number: ",         unique(master_df.n_tasks))
+println("master df unique learning rates: ",      unique(master_df.learning_rate))
+println("master df unique interaction rates: ",   unique(master_df.interaction_rate))
+println("master df unique dead time: ",           unique(master_df.dead_time))
+println("master df unique sigmoid sensitivity: ", unique(master_df.lambda_sensitivity))
+```
+
+```{julia}
+ir = 100
+dt = 10
+lr = 0.000005
 df = subset(
     master_df,
-    :n_epochs => ByRow(==(10000))
+    #:n_bees => ByRow(==(8)),
+    #:n_tasks => ByRow(==(9))
+    :interaction_rate => ByRow(==(ir)),
+    :dead_time => ByRow(==(dt)),
+    :learning_rate => ByRow(==(lr))
+    #:n_epochs => ByRow(==(10000))
     #:learning_rate => ByRow(==()))
 )
 run_path = df.run_path[2]
 ```
 
 ```{julia}
-run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_76_rep_1"
-run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_92_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_76_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/data/param_92_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_init/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t_time_test/data/param_5_rep_1"
 states = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+activity = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
 cfg = load_config(joinpath(run_path, "config.json"))
+task_index = load_task_index_mapping(run_path)
 ```
 
 ```{julia}
@@ -31,7 +57,7 @@ for (i,t) in enumerate(taskids)
         states,
         :task_id => ByRow(==(t))
     )
-    ax = Makie.Axis(one_fig[i,1], xlabel="epoch", ylabel="accuracy")
+    ax = Makie.Axis(one_fig[i,1], xlabel="epoch", ylabel="accuracy", title= "$(task_index[t])")
     for a in agentids
         a_df = subset(
             t_df,
@@ -47,3 +73,38 @@ one_fig
 ```
 
 ```{julia}
+save_dir_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(save_dir_path, "3b3t_real")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+run_name = basename(run_path)
+folder_name = basename(dirname(dirname(run_path)))
+timestamp = Dates.format(now(), "yyyy-mm-dd_HHMM")
+descriptor = "half_model_ir_$(ir)_dt_$(dt)_lr_$(lr)"
+name = "3b3t_real_$(folder_name)_$(run_name)_$(descriptor)_$(timestamp)"
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), one_fig)
+save(joinpath(save_path, "$(name).png"), one_fig)
+```
+
+# quickly skimming over runs
+
+```{julia}
+ana = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/steffen_scores_car_bank_wdbc_2026-01-28_1328.csv", DataFrame)
+```
+
+```{julia}
+th = 0.9
+sub = subset(
+    ana,
+    :threshold => ByRow(==(th)),
+    :unique_specialist => ByRow(==(2)),
+    :dead_time => ByRow(==(10)),
+    :interaction_rate => ByRow(==(10))
+)
+```
+
+```{julia}
+run_path = sub.param_dir[1]
+```

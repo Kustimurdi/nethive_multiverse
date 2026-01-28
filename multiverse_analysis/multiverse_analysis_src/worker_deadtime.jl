@@ -6,7 +6,7 @@ function classify_dominant_bee(log::DataFrame)
     bee_ids = unique(vcat(log.bee1_id, log.bee2_id))
     highest_score = 0.0
     score_bee_id = 0
-    for id in bee_ids
+    #for id in bee_ids
         
 end
 

@@ -31,7 +31,7 @@ task_cols(state) = filter(c -> occursin(r"^task_\d+$", String(c)), names(state))
 function task_matrix(state::DataFrame)
     tcols = task_cols(state)
     A = Matrix{Float64}(state[:, tcols])   # size: n_agents × n_tasks
-    println(A)
+    #println(A)
     return A, tcols
 end
 
@@ -137,6 +137,7 @@ function steffen_scores_over_time_df(acc_log::DataFrame;
         any_geq = Int[],
         exactly_one_geq = Int[],
         unique_specialist = Int[],
+        avg_agents_geq_per_task = Float64[],
     )
 
     for t in time_points
@@ -152,13 +153,14 @@ function steffen_scores_over_time_df(acc_log::DataFrame;
         for q in thresholds
             stats = task_coverage_stats(state, q)
             push!(out, (
-                float64(t),
-                float64(q),
+                Float64(t),
+                Float64(q),
                 na,
                 nt,
                 stats.any_geq,
                 stats.exactly_one_geq,
-                stats.unique_specialist
+                stats.unique_specialist,
+                stats.avg_agents_geq_per_task
             ))
         end
     end
@@ -170,7 +172,7 @@ function steffen_scores_one_run(run; thresholds=[0.8, 0.9],
                                 time_points=nothing)
     # sanity checks
     isfile(run.config_path)    || error("missing config.json")
-    isfile(run.data_path) || error("missing data log, prob. event_log.csv")
+    isfile(run.event_log_path) || error("missing data log, prob. event_log.csv")
 
     # --- load only selected config values (as a 1-row DF) ---
     cfg_all = config_to_df(run.config_path)  # 1-row DF
@@ -183,7 +185,8 @@ function steffen_scores_one_run(run; thresholds=[0.8, 0.9],
     acc_log = CSV.read(run.event_log_path, DataFrame)  # adjust if you already have a loader
 
     if time_points === nothing
-        tmax = parse(Float64, cfg_all[1, :n_epochs])  # assuming n_epochs corresponds to max time
+        #tmax = parse(Float64, cfg_all[1, :n_epochs])  # assuming n_epochs corresponds to max time
+        tmax = Float64(cfg_all[1, :n_epochs])
         time_points = [tmax / 2, tmax]
     end
 

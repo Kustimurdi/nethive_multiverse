@@ -127,7 +127,7 @@ function collect_all_rates(hive::MultiTaskHive)
     return rates, actions
 end
 
-function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
+function execute_action_outdated!(hive::MultiTaskHive, action, loaders::Dict)
     type, bee1, bee2, task = action.type, action.bee1, action.bee2, action.task
     
     if type == :produce
@@ -138,10 +138,6 @@ function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
         perform_production!(hive, bee1, task, task_train_loader, task_test_loader)
         
     elseif type == :suppress
-        # bee2 (source) suppresses bee1's (target) task
-        #println("Bee $bee2 suppresses Bee $bee1 on Task $task at time $(hive.current_time)")
-        #println("accuracy of bee1 before suppression: $(hive.queen_genes[bee1, task])")
-        #println("accuracy of bee2 before suppression: $(hive.queen_genes[bee2, task])")
         perform_suppression!(hive, bee1, bee2, task, loaders)
     else
         error("Unknown action type: $type")
@@ -153,6 +149,35 @@ function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
     
     return type
 end
+
+function execute_action!(hive::MultiTaskHive, action, loaders::Dict)
+    type, bee1, bee2, task = action.type, action.bee1, action.bee2, action.task
+
+    if type == :produce
+        dataset_name = hive.config.index_to_task_mapping[task]
+        train_loader = loaders[dataset_name]["train"]
+        test_loader  = loaders[dataset_name]["test"]
+        perform_production!(hive, bee1, task, train_loader, test_loader)
+
+        # training changes weights -> cross-task interference possible
+        accs, losses = evaluate_bee_on_all_tasks(hive, bee1, loaders)
+        hive.queen_genes[bee1, :] .= accs
+        hive.losses[bee1, :] .= losses
+
+    elseif type == :suppress
+        perform_suppression!(hive, bee1, bee2, task, loaders)
+
+        # only reevaluate if suppression changes weights
+        if hive.config.punishment != :time_out && hive.config.punishment != :none
+            accs, losses = evaluate_bee_on_all_tasks(hive, bee1, loaders)
+            hive.queen_genes[bee1, :] .= accs
+            hive.losses[bee1, :] .= losses
+        end
+    end
+
+    return type
+end
+
 
 function release_tasks!(suppressed_tasks::Array, suppression_starting_times::Array, current_time::Float64; dead_time::Float64=1.0)
 
@@ -188,7 +213,6 @@ function perform_suppression!(hive::MultiTaskHive, bee_idx::Int, partner_bee_idx
     else
         error("Unknown punishment type: $pun")
     end
-    #perform_resetting!(hive, bee_idx)
 
     return nothing
 end
@@ -202,6 +226,7 @@ end
 function perform_resetting!(hive::MultiTaskHive, bee_idx::Int)
 
     hive.brains[bee_idx] = hive.config.model_template()
+    hive.opt_states[b] = Flux.setup(Flux.Adam(hive.config.learning_rate), hive.brains[b])
 
     return nothing
 end
@@ -367,16 +392,14 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
         end
 
         if epoch % 1000 == 0
-            println("file sollte gespeichert werden irgendwo in: $(output_dir), epoch: $epoch")
             dir_path = joinpath(output_dir, foldername)
             dir_path = joinpath(dir_path, "check_files/")
-            println("dir path: $dir_path")
+            println("dir path: $dir_path, epoch: $epoch")
             if !isdir(dir_path)
                 mkpath(dir_path)
             end
             name = "epoch_$epoch.txt"
             write_empty_file(dir_path, name)
-            println("should have been written")
             is_file = isfile(joinpath(dir_path, name))
             println("is file: $is_file")
         end

@@ -32,19 +32,18 @@ This is the main entry point for multi-task setup. It handles:
 
 # Example
 ```julia
-dataset_names = [:mnist, :fashion_mnist]
-loaders, task_info, model_template = prepare_multitask_setup(dataset_names)
+#dataset_names = [:mnist, :fashion_mnist]
+#loaders, task_info, model_template = prepare_multitask_setup(dataset_names)
 
-# Create a fresh model
-model = model_template()
+## Create a fresh model
+#model = model_template()
 
-# Get training data for MNIST
+## Get training data for MNIST
 train_loader = loaders[:mnist]["train"]
 ```
 """
 function prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int=32)
     @info "Preparing multi-task setup for datasets: $dataset_names"
-    println("am now in prepare_multitask_setup") 
     # Step 1: Calculate universal dimensions
     max_input_dim, max_output_dim = calculate_universal_dimensions(dataset_names)
     @info "Universal dimensions" max_input_dim=max_input_dim max_output_dim=max_output_dim
@@ -68,7 +67,19 @@ function prepare_multitask_setup(dataset_names::Vector{Symbol}; batch_size::Int=
         println("Created loaders for dataset: $dataset_name")
         println("  Train batches: $(length(train_loader)), Test batches: $(length(test_loader))")
         println("  Input dim: $(dataset.padded_input_dim), Output classes: $(dataset.n_classes)")
+        println("  Train loader size: ", length(train_loader))
+        println("  Test loader size: ", length(test_loader))
+
+        (x0, y0) = first(train_loader)
+        @info "trainloader first batch" size(x0) eltype(x0) size(y0) eltype(y0)
+        println("trainloader first batch x0 size: ", size(x0), " y0 size: ", size(y0), " x0 eltype: ", eltype(x0), " y0 eltype: ", eltype(y0))
+        println("first sample x0: ", x0[:,1], " y0: ", y0[:,1])
+        (x0, y0) = first(test_loader)
+        @info "testloader first batch" size(x0) eltype(x0) size(y0) eltype(y0)
+        println("testloader first batch x0 size: " , size(x0), " y0 size: ", size(y0), " x0 eltype: ", eltype(x0), " y0 eltype: ", eltype(y0))
+        println("first sample x0: ", x0[:,1], " y0: ", y0[:,1])
     end
+    println("all loaders created")
     
     # Step 4: Create model template function
     model_template = create_universal_model_template(max_input_dim, max_output_dim)
@@ -107,7 +118,7 @@ function calculate_universal_dimensions(dataset_names::Vector{Symbol})
         :bank => (input_dim=53, n_classes=2),             # Bank marketing tabular (default)
         :wdbc => (input_dim=30, n_classes=2),             # Wisconsin Diagnostic Breast Cancer
         :iris => (input_dim=4, n_classes=3),              # Iris dataset
-        :car_evaluation => (input_dim=6, n_classes=4),    # Car Evaluation dataset
+        :car_evaluation => (input_dim=21, n_classes=4),    # Car Evaluation dataset
         :wineq_red => (input_dim=11, n_classes=6)
     )
     
@@ -182,16 +193,18 @@ Each call to `model_template()` returns a fresh model with randomly initialized 
 
 # Example
 ```julia
-model_template = create_universal_model_template(3072, 10)
-model1 = model_template()  # Fresh model
-model2 = model_template()  # Another fresh model (different weights)
+#model_template = create_universal_model_template(3072, 10)
+#model1 = model_template()  # Fresh model
+#model2 = model_template()  # Another fresh model (different weights)
 ```
 """
 function create_universal_model_template(input_dim::Int, output_dim::Int)
     function model_template()
         # Universal architecture that works for all classification tasks
-        hidden_dim1 = max(128, input_dim ÷ 4)  # Adaptive hidden size
-        hidden_dim2 = max(64, hidden_dim1 ÷ 2)
+        #hidden_dim1 = max(128, input_dim ÷ 4)  # Adaptive hidden size
+        #hidden_dim2 = max(64, hidden_dim1 ÷ 2)
+        hidden_dim1 = max(64, input_dim ÷ 4)  # Adaptive hidden size
+        hidden_dim2 = max(32, hidden_dim1 ÷ 2)
         
         return Chain(
             Dense(input_dim, hidden_dim1),

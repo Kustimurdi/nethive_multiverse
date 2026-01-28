@@ -13,20 +13,28 @@ include("../steffen_scores/steffen_score_long.jl")
 println("what")
 
 roots = [
-    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t15c10000e5-6lr100ls_full_phase_diagram",
-    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t15c10000e5-6lr_dead_time",
-    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t15c10000e5-6lr_int_rate"
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t15c10000e5-6lr100ls_full_phase_diagram",
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t15c10000e5-6lr_dead_time",
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t15c10000e5-6lr_int_rate"
+
     #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_sensitivity_sweep"
-    "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_eta_sweep_rechts"
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_eta_sweep_rechts",
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_eta_sweep_unten"
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t2000e_car_iris_wine_sweep"
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_wine_bank"
+
+    #"/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc"
+    "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc"
 ]
 
 println("is")
-results, failures = steffen_scores_all_runs_from_config_long(roots; thresholds=[0.8, 0.9])
+results, failures = steffen_scores_all_runs_from_config_long(roots; thresholds=[0.6, 0.8, 0.9])
 
 println("good")
-output_dir = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out"
-prefix = "steffen_scores_5b5t_eta_sweep_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
-#prefix = "steffen_test"
+#output_dir = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out"
+output_dir = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc"
+#prefix = "steffen_scores_3b3t_car_bank_wine_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
+prefix = "steffen_scores_car_bank_wdbc_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
 paths = save_analysis_outputs(results, failures,
     output_dir;
     prefix=prefix

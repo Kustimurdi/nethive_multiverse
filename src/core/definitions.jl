@@ -227,8 +227,8 @@ function create_multitask_hive_config(dataset_names::Vector{Symbol},
         interaction_rate,
         Float32(learning_rate),
         Float32(punish_rate),
-        punishment,
         Float16(lambda_sensitivity),
+        punishment,
         random_seed,
         save_nn_epochs,
         batches_per_step,
@@ -285,6 +285,8 @@ mutable struct MultiTaskHive
     suppressed_tasks::Matrix{Bool}            # [bee, task] suppression status
     suppression_start_times::Matrix{Float64}  # [bee, task] suppression timing
 
+    opt_states::Vector{Any}
+
     function MultiTaskHive(config::MultiTaskHiveConfig;
                           initial_queen_genes::Union{Matrix{Float64}, Nothing}=nothing)
         
@@ -319,16 +321,19 @@ mutable struct MultiTaskHive
         suppressed_tasks = fill(false, n_bees, n_tasks)
         suppression_start_times = zeros(Float64, n_bees, n_tasks)
         
+        opt_states = [Flux.setup(Flux.Adam(config.learning_rate), brains[b]) for b in 1:n_bees]
+        
         return new(config,
                   n_bees,
                   n_tasks,
                   current_epoch,
                   current_time,
                   brains,
-                  losses,
                   queen_genes,
+                  losses,
                   suppressed_tasks,
-                  suppression_start_times)
+                  suppression_start_times,
+                  opt_states)
     end
 end
 
@@ -346,8 +351,8 @@ Create a MultiTaskHive from a MultiTaskHiveConfig.
 
 # Example
 ```julia
-config = create_multitask_hive_config([:mnist, :fashion_mnist], loaders, task_info, model_template)
-hive = create_multitask_hive(config)
+#config = create_multitask_hive_config([:mnist, :fashion_mnist], loaders, task_info, model_template)
+#hive = create_multitask_hive(config)
 ```
 """
 function create_multitask_hive(config::MultiTaskHiveConfig; kwargs...)

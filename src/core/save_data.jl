@@ -50,7 +50,7 @@ function save_activity_csv(results::NamedTuple, output_dir::String)
     filepath = joinpath(output_dir, "activity.csv")
     CSV.write(filepath, df)
     
-    println("Task evolution saved to: $filepath")
+    println("Suppression evolution saved to: $filepath")
     return df
 end
 function save_losses_csv(results::NamedTuple, output_dir::String)

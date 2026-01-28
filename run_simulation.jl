@@ -1,4 +1,3 @@
-println("hallo1")
 using Pkg
 Pkg.activate("./env_nethive_multiverse/")
 #Pkg.instantiate()
@@ -16,7 +15,6 @@ using Random
 using Statistics
 using Dates
 using JLD2
-println("hallo3")
 
 # Load our modules
 include("src/data/loaders.jl")
@@ -26,8 +24,6 @@ include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 include("src/data/prepare_gaussset.jl")
-
-println("hallo4")
 
 function parse_commandline()
     s = ArgParseSettings(description = "Run Gillespie NN simulations with flexible configuration")
@@ -237,6 +233,8 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                               timestamp::Bool=false, verbose::Bool=true, save_results=false, save_all=false)
     """Run a single simulation with given configuration"""
     
+    println("ouput_dir: ", output_dir)
+    
     # Make a copy to avoid modifying the original config
     config = copy(config)
     
@@ -265,11 +263,6 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     end
     
     # Initialize loaders and hive
-    println("config:")
-    for (k,v) in config
-        println("  $k: $v")
-    end
-
     if get(config,"use_gauss_dataset", false) === true
         gauss_dataset_dir = config["gauss_dataset_dir"]
         gauss_dataset_name = config["gauss_dataset_name"]
@@ -331,6 +324,7 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     config["run_time"] = round(end_time - start_time, digits=2)
 
     run_output_dir = joinpath(output_dir, foldername)
+    println("Run output directory: $run_output_dir")
     if get(config, "save_nn_epochs", 0) > 0 && length(results.model_states) > 0
         for (i, state_snapshot) in enumerate(results.model_states)
             epoch = state_snapshot.epoch
@@ -363,20 +357,28 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
     if save_all
         save_simulation_results(results, run_output_dir;
                                 save_states=true,
+                                save_activity=true,
                                 save_events=true,
                                 save_losses=true)
+    else
+        println("Saving summary results...")
+        save_simulation_results(results, run_output_dir)
+        println("Summary results saved to: $run_output_dir")
     end
 
-    log_df = log_to_dataframe(results.log)
-    println("Saving event log (raw and DataFrame)...")
-    println("log DataFrame size: ", size(log_df))
-    println("short view:")
-    show(first(log_df, 5))
+    save_log = false
+    if save_log == true
+        log_df = log_to_dataframe(results.log)
+        println("Saving event log (raw and DataFrame)...")
+        println("log DataFrame size: ", size(log_df))
+        println("short view:")
+        show(first(log_df, 5))
 
-    try
-        save_log_df(log_df, run_output_dir)
-    catch e
-        @warn "Could not save event log DataFrame: $e"
+        try
+            save_log_df(log_df, run_output_dir)
+        catch e
+            @warn "Could not save event log DataFrame: $e"
+        end
     end
 
     # Save configuration and metadata
@@ -396,9 +398,7 @@ function main()
     """Main function for command line usage"""
     args = parse_commandline()
     if !isempty(args["config"])
-        println("failt es davor?")
         config = load_config_from_json(args["config"])
-        println("failt es danach?")
     else
         config = create_default_config()
     end
@@ -423,16 +423,25 @@ function main()
         config["max_output_dim"] = config["n_classes"]
     end
 
-    println("Running simulation with the following configuration:")
-    for (key, value) in config
-        println("  $key: $value")
-    end
-    println()
+    #println("Running simulation with the following configuration:")
+    #for (key, value) in config
+        #println("  $key: $value")
+    #end
+    #println()
 
     # Run simulation
+    
+    # Saving in alternative directory structure
+    println("args outputdir: ", args["output-dir"])
+    folder_name = basename(dirname(args["output-dir"]))
+    alt_dir = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint"
+    alt_output_dir = joinpath(alt_dir, folder_name, "data")
+    println("alt output dir: ", alt_output_dir)
+
     results = run_single_simulation(
         config,
-        args["output-dir"],
+        #args["output-dir"],
+        alt_output_dir,
         args["base-name"];
         timestamp=args["timestamp"],
         verbose=args["verbose"],

@@ -171,9 +171,11 @@ onset =  analyze_event_log_csv(run_path; thresholds = [0.8, 0.9])
 
 ```{julia}
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/steffen_scores/steffen_score.jl")
-res = task_coverage_stats(elog, 0.8)
+#res = task_coverage_stats(elog, 0.8)
 steff = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
 ```
+
+# testing old runs
 
 ```{julia}
 include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/onset/onset_analysis.jl")
@@ -206,4 +208,10 @@ runs = collect_runs([root_path], event_filename="states.csv")
 ```{julia}
 run = runs[1]
 out = steffen_scores_one_run_long(run)
+```
+
+# testing steffen scores with old runs
+
+```{julia}
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/analysis"
 ```

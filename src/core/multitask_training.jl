@@ -40,24 +40,27 @@ function perform_production!(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, t
     
     # Get the bee's brain
     model = hive.brains[bee_idx]
+    opt_state = hive.opt_states[bee_idx]
     learning_rate = hive.config.learning_rate
     max_batches = hive.config.batches_per_step
     
     # Training phase
-    training_loss = train_model!(model, train_loader; learning_rate=learning_rate, max_batches=max_batches)
+    training_loss = train_model!(model, opt_state, train_loader; learning_rate=learning_rate, max_batches=max_batches)
     
+    # the evaluation and updating of the hive state is done for all tasks afterwards in the execute_action! function
+
     # Evaluation phase
-    accuracy = calc_classification_accuracy(model, test_loader)
+    #accuracy = calc_classification_accuracy(model, test_loader)
     
     # Update hive state
-    hive.queen_genes[bee_idx, task_idx] = accuracy
+    #hive.queen_genes[bee_idx, task_idx] = accuracy
     
-    return training_loss, accuracy
+    return training_loss#, accuracy
 end
 
-function train_model!(model, train_loader; learning_rate, max_batches=nothing)
+function train_model!(model, opt_state, train_loader; learning_rate, max_batches=nothing)
 
-    opt_state = Flux.setup(Flux.Adam(learning_rate), model)
+    #opt_state = Flux.setup(Flux.Adam(learning_rate), model)
     total_batch_loss = 0.0
     n_batches = 0
     
@@ -97,9 +100,6 @@ function calc_classification_accuracy(model, dataloader; num_batches::Int=typema
     total = 0
     
     for (x_batch, y_batch) in Iterators.take(dataloader, num_batches)
-        @show size(x_batch) eltype(x_batch) size(y_batch) eltype(y_batch)
-        @show size(x_batch, 1)
-        @show unique(sum(x_batch[12:end, :]; dims=1))  # nur falls du vermutest: one-hot task block
 
         # Get predicted class indices (highest output)
         preds = Flux.onecold(model(x_batch))
@@ -170,9 +170,6 @@ function evaluate_bee_on_task(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, 
     end
     
     model = hive.brains[bee_idx]
-    (x0, y0) = first(test_loader)
-    @info "test_loader first batch" size(x0) eltype(x0) size(y0) eltype(y0)
-
 
     accuracy = calc_classification_accuracy(model, test_loader)
     loss = calc_classification_loss(model, test_loader)

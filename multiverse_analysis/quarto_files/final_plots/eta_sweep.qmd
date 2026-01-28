@@ -1,6 +1,12 @@
 ```{julia}
-st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
-st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1851.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
+#st1 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1851.csv", DataFrame)
+st1 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_2026-01-25_1851.csv", DataFrame)
+st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_add_v12026-01-26_1158.csv", DataFrame)
+```
+
+```{julia}
+st = vcat(st1, st2)
 ```
 
 ```{julia}
@@ -50,8 +56,10 @@ ycol = :lambda_sensitivity
 #valcol = :unique_ratio_std
 #valcol = :avg_agents_mean
 #valcol = :avg_agents_std
-valcol = :any_ratio_mean
+#valcol = :any_ratio_mean
 #valcol = :any_ratio_std
+#valcol = :avg_agents_mean
+valcol = :avg_agents_std
 
 xs = sort(unique(agg[:, xcol]))
 ys = sort(unique(agg[:, ycol]))
@@ -73,8 +81,8 @@ ticklabelsize = 28
 ax = Axis(heat_fig[1,1], 
             #xlabel = L"\text{dead time } t_d", 
             #ylabel = L"\text{interaction rate prefactor } \alpha",
-            xlabel = "alphatau",
-            ylabel = "eta",
+            xlabel = L"\alpha * \tau",
+            ylabel = L"\eta",
             xlabelsize = labelsize,
             ylabelsize = labelsize,
             xticklabelsize = ticklabelsize,
@@ -120,13 +128,13 @@ display(heat_fig)
 
 ```{julia}
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
-save_path = joinpath(folder_path, "2b2t_plots")
+save_path = joinpath(folder_path, "eta_sweep_plots")
 if !isdir(save_path)
     mkdir(save_path)
 end
 descriptor = "$(valcol)"
 lr = st.learning_rate[1]
-name = "2b2t_heatmap_lr_$(lr)_$(string(valcol))"
+name = "5b5t_eta_sweep_$(lr)_$(string(valcol))"
 #name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
 save(joinpath(save_path, "$(name).pdf"), heat_fig)
 save(joinpath(save_path, "$(name).png"), heat_fig)

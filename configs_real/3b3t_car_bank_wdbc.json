@@ -1,0 +1,30 @@
+{
+    "base_config": {
+        "n_bees": 3,
+        "n_tasks":3,
+        "dataset_names": ["car_evaluation", "bank", "wdbc"],
+        "n_epochs": 2000,
+        "n_steps_per_epoch": 1,
+        "batch_size": 64,
+        "save_nn_epochs": 2000,
+        "seed": null,
+        "punish_rate": 0.1,
+        "production_rate": 1.0,
+        "punishment": "time_out",
+        "n_classes": 15,
+        "features_dimension": 10,
+        "n_per_class_train": 100,
+        "n_per_class_test": 50,
+        "use_gauss": false,
+        "use_per_class_variance": true,
+        "variance_bounds": [0.01, 0.05],
+        "batches_per_step": 1000,
+        "center_generation_bounds": [0.0, 1.0]
+    },
+    "sweep_parameters": {
+        "lambda_sensitivity": [100.0, 10000.0, 1000000.0],
+        "learning_rate": [0.000005, 0.00001, 0.00005, 0.0001],
+        "interaction_rate": [1, 5, 10, 50, 100],
+        "dead_time": [1, 5, 10, 50, 100]
+    }
+}

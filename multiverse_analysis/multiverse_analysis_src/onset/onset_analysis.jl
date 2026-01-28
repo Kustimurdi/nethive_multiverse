@@ -28,13 +28,13 @@ function collect_runs(roots::Vector{String};
     for root in roots
         for param_dir in find_param_dirs(root)
             param_folder = splitdir(param_dir)[2]
-            event_path  = joinpath(param_dir, event_filename)
+            event_log_path  = joinpath(param_dir, event_filename)
             config_path = joinpath(param_dir, config_filename)
             push!(runs, (
                 root = root,
                 param_dir = param_dir,
                 param_folder = param_folder,
-                data_path = event_path,
+                event_log_path = event_log_path,
                 config_path = config_path,
             ))
         end

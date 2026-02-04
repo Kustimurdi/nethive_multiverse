@@ -1,14 +1,24 @@
+# original 2b2t heatmap lr 5e-6
 ```{julia}
-#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
 st1 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_wout_og_2026-01-21_1934.csv", DataFrame)
 st2 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_og_vals_2026-01-27_1611.csv", DataFrame)
 select!(st2, Not(:n_epochs, :avg_agents_geq_per_task))
+st = vcat(st1, st2)
+```
+
+# 10b10 heatmap lr 1e-5
+
+```{julia}
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t15c10000e5-6lr100ls_high_dt/steffen_scores_10b10t15c10000e5-6lr100ls_high_dt_2026-02-02_1425.csv", DataFrame)
+```
+```{julia}
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", DataFrame)
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_3b3t_car_iris_wine_2026-01-26_1909.csv", DataFrame)
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_5-6lr_2026-01-27_1349.csv", DataFrame)
 #st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_2026-01-27_1528.csv", DataFrame)
-st = vcat(st1, st2)
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/steffen_scores_car_bank_wdbc_2026-01-28_1816.csv", DataFrame)
 ```
 
 ```{julia}
@@ -23,7 +33,7 @@ df_sel = subset(
     st, 
     :threshold => ByRow(==(th)),
     #:learning_rate => ByRow(==(lr))
-    #:lambda_sensitivity => ByRow(==(ls))
+    :lambda_sensitivity => ByRow(==(ls))
 )
 ```
 
@@ -65,8 +75,8 @@ agg = combine(
 ```{julia}
 xcol = :interaction_rate
 ycol = :dead_time
-#valcol = :unique_ratio_mean
-valcol = :unique_ratio_std
+valcol = :unique_ratio_mean
+#valcol = :unique_ratio_std
 #valcol = :avg_agents_mean
 #valcol = :avg_agents_std
 #valcol = :any_ratio_mean
@@ -139,13 +149,13 @@ display(heat_fig)
 
 ```{julia}
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
-save_path = joinpath(folder_path, "2b2t_plots")
+save_path = joinpath(folder_path, "3b3t_real_data_heatmap")
 if !isdir(save_path)
     mkdir(save_path)
 end
 descriptor = "$(valcol)"
-lr = st.learning_rate[1]
-name = "2b2t_heatmap_lr_$(lr)_$(string(valcol))"
+#lr = st.learning_rate[1]
+name = "3b3t_car_bank_wdbc_lr_$(lr)_ls_$(ls)_th_$(th)_$(string(valcol))"
 #name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
 save(joinpath(save_path, "$(name).pdf"), heat_fig)
 save(joinpath(save_path, "$(name).png"), heat_fig)

@@ -58,8 +58,8 @@ ycol = :lambda_sensitivity
 #valcol = :avg_agents_std
 #valcol = :any_ratio_mean
 #valcol = :any_ratio_std
-#valcol = :avg_agents_mean
-valcol = :avg_agents_std
+valcol = :avg_agents_mean
+#valcol = :avg_agents_std
 
 xs = sort(unique(agg[:, xcol]))
 ys = sort(unique(agg[:, ycol]))
@@ -81,8 +81,8 @@ ticklabelsize = 28
 ax = Axis(heat_fig[1,1], 
             #xlabel = L"\text{dead time } t_d", 
             #ylabel = L"\text{interaction rate prefactor } \alpha",
-            xlabel = L"\alpha * \tau",
-            ylabel = L"\eta",
+            xlabel = L"\text{suppression intensity }\alpha * \tau",
+            ylabel = L"\text{sensitivity }\eta",
             xlabelsize = labelsize,
             ylabelsize = labelsize,
             xticklabelsize = ticklabelsize,
@@ -102,24 +102,30 @@ ytick_vals = intersect(ys, powers)
 #pushfirst!(ytick_vals, 0.01)
 xtick_pos = [xi[v] for v in xtick_vals] 
 ytick_pos = [yi[v] for v in ytick_vals] 
-#ticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
-ax.xticks = (xtick_pos, string.(xtick_vals))
-ax.yticks = (ytick_pos, string.(ytick_vals))
-#ax.xticks = (xtick_pos, ticks)
-#ax.yticks = (ytick_pos, ticks)
+#xticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}"]
+yticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}", L"10^{5}"]
+
+deleteat!(xtick_pos, 1:2)
+xticks = [L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}"]
+#ax.xticks = (xtick_pos, string.(xtick_vals))
+#ax.yticks = (ytick_pos, string.(ytick_vals))
+ax.xticks = (xtick_pos, xticks)
+ax.yticks = (ytick_pos, yticks)
 cb = Colorbar(heat_fig[1,2], 
         hm,
         #label = L"\text{Average of the highest Accuracies}", #IMPORTANT: check if it corresponds to the depicted value
         #label = L"\text{Average of the Coverage Fraction}",
         #label = L"\text{Standard deviation of the highest Accuracy}",
         #label = L"\text{Standard deviation of the Coverage Fraction}",
-        label = "$(valcol)",
+        #label = "$(valcol)",
+        label = L"\text{Degree of Specialization}",
         labelsize = labelsize,
         ticklabelsize = ticklabelsize)
 #cb.ticks = ([0.85, 0.90, 0.95], [L"0.85", L"0.90", L"0.95"]) #mean coverage
 #cb.ticks = ([0.6, 0.7, 0.8, 0.9, 1.0], [L"0.6", L"0.7", L"0.8", L"0.9", L"1.0"]) #mean accuracy
 #cb.ticks = ([0.0, 0.1, 0.2, 0.3, 0.4], [L"0.0", L"0.1", L"0.2", L"0.3", L"0.4"]) #std accuracy
 #cb.ticks = ([0.0, 0.1, 0.2, 0.3], [L"0.0", L"0.1", L"0.2", L"0.3"]) #std coverage
+cb.ticks = ([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [L"0.0", L"0.2", L"0.4", L"0.6", L"0.8", L"1.0"])
 ```
 
 ```{julia}
@@ -134,7 +140,7 @@ if !isdir(save_path)
 end
 descriptor = "$(valcol)"
 lr = st.learning_rate[1]
-name = "5b5t_eta_sweep_$(lr)_$(string(valcol))"
+name = "5b5t_eta_sweep_cleaned_up_$(lr)_$(string(valcol))_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
 #name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
 save(joinpath(save_path, "$(name).pdf"), heat_fig)
 save(joinpath(save_path, "$(name).png"), heat_fig)

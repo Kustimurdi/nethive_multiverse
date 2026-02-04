@@ -94,7 +94,7 @@ function parse_slurm_args()
         "--precompile-on-start"
             help = "Run Pkg.instantiate() and Pkg.precompile() at job start (useful with per-job depot)"
             action = :store_true
-        "--per-job-depot"
+        "--no-per-job-depot"
             help = "Use a per-job JULIA_DEPOT_PATH to avoid shared-depot precompilation contention"
             action = :store_true
     end
@@ -323,7 +323,8 @@ function create_slurm_script(job_config::Dict, job_id::Int, output_dir::String, 
         write(io, "export JULIA_PROJECT=./env_nethive_multiverse\n")
 
         # Optionally use a per-job depot to avoid shared-depot precompilation contention
-        if get(args, "per-job-depot", false)
+        use_per_job_depot = !get(args, "no-per-job-depot", false)
+        if use_per_job_depot
             write(io, "\n# Use per-job JULIA_DEPOT_PATH to reduce shared-depot locking/contention\n")
             # Build export line using Char(36) so we never include a literal $ in the Julia source
             write(io, "export JULIA_DEPOT_PATH=\"")
@@ -418,6 +419,12 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
             write(io, "#SBATCH --mail-type=END,FAIL\n")
             write(io, "#SBATCH --mail-user=$(args["email"])\n")
         end
+
+        write(io, "\nset -euo pipefail\n")
+        write(io, "export JULIA_NUM_THREADS=\${SLURM_CPUS_PER_TASK:-1}\n")
+        write(io, "echo \"SLURM_CPUS_PER_TASK=\${SLURM_CPUS_PER_TASK:-unset}\"\n")
+        write(io, "echo \"JULIA_NUM_THREADS=\$JULIA_NUM_THREADS\"\n")
+
         
         write(io, "\n# Job array information\n")
         write(io, "echo \"Job array started at: \$(date)\"\n")
@@ -444,26 +451,51 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         write(io, "\n# Set Julia project environment\n")
         write(io, "export JULIA_PROJECT=./env_nethive_multiverse\n")
 
-        if get(args, "per-job-depot", false)
-            write(io, "\n# Use per-job JULIA_DEPOT_PATH to reduce shared-depot locking/contention\n")
-            write(io, "export JULIA_DEPOT_PATH=\"")
-            write(io, string(Char(36)))
-            write(io, "{SCRATCH:-/scratch}/")
-            write(io, string(Char(36)))
-            write(io, "USER/julia_depot/")
-            write(io, string(Char(36)))
-            write(io, "SLURM_JOB_ID\"\n")
-            write(io, "mkdir -p \"")
-            write(io, string(Char(36)))
-            write(io, "JULIA_DEPOT_PATH\"\n")
+
+        use_per_job_depot = !get(args, "no-per-job-depot", false)
+        if use_per_job_depot   # I'd default this to true for arrays
+            write(io, "\n# --- Julia depot setup (avoid ~/.julia locking & cross-node cache races) ---\n")
+            write(io, "export JULIA_PKG_PRECOMPILE_AUTO=0\n")
+            write(io, "export JULIA_HISTORY=/dev/null\n")
+
+            write(io, "SCRATCH_BASE=/scratch/n/N.Pfaffenzeller\n")
+            write(io, "echo \"SCRATCH_BASE=\$SCRATCH_BASE\"\n")
+
+            #write(io, "DEPOT_TASK=\"\$SCRATCH_BASE/.julia_depot_task_\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${SLURM_PROCID:-0}\"\n")
+            #write(io, "DEPOT_COMPILED=\"\$SCRATCH_BASE/.julia_depot_compiled_shared\"\n")
+            #write(io, "DEPOT_SHARED=\"\$SCRATCH_BASE/.julia_depot_shared\"\n")
+
+            #write(io, "mkdir -p \"\$DEPOT_TASK\" \"\$DEPOT_COMPILED\" \"\$DEPOT_SHARED\"\n")
+
+            ## depot order: task (locks) -> compiled shared (.ji) -> shared (packages/artifacts)
+            #write(io, "export JULIA_DEPOT_PATH=\"\$DEPOT_COMPILED:\$DEPOT_SHARED:\$DEPOT_TASK\"\n")
+
+            #write(io, "echo \"JULIA_DEPOT_PATH=\$JULIA_DEPOT_PATH\"\n")
+            #write(io, "ls -ld \"\$DEPOT_TASK\" \"\$DEPOT_COMPILED\" \"\$DEPOT_SHARED\" || true\n")
+
+            write(io, "DEPOT_COMPILED=\"\$SCRATCH_BASE/.julia_depot_compiled_shared\"\n")
+            write(io, "DEPOT_SHARED=\"\$SCRATCH_BASE/.julia_depot_shared\"\n")
+            write(io, "mkdir -p \"\$DEPOT_COMPILED\" \"\$DEPOT_SHARED\"\n")
+
+            # depot order: compiled cache first, then packages/artifacts
+            write(io, "export JULIA_DEPOT_PATH=\"\$DEPOT_COMPILED:\$DEPOT_SHARED\"\n")
+            write(io, "echo \"JULIA_DEPOT_PATH=\$JULIA_DEPOT_PATH\"\n")
+            write(io, "ls -ld \"\$DEPOT_COMPILED\" \"\$DEPOT_SHARED\" || true\n")
+
+
+
+            write(io, "export DATADEPS_ALWAYS_ACCEPT=1\n")
+            write(io, "export DATADEPS_LOAD_PATH=\"\$SCRATCH_BASE/datadeps\"\n")
+            write(io, "mkdir -p \"\$DATADEPS_LOAD_PATH\"\n")
+            write(io, "echo \"DATADEPS_LOAD_PATH=\$DATADEPS_LOAD_PATH\"\n")
+
+        else 
+            write(io, "export JULIA_DEPOT_PATH=/scratch/n/N.Pfaffenzeller/.julia_depot_shared\n")
+            write(io, "mkdir -p \"\$JULIA_DEPOT_PATH\"\n")
+            write(io, "echo \"JULIA_DEPOT_PATH=\$JULIA_DEPOT_PATH\"\n")
         end
 
-        if get(args, "precompile-on-start", false)
-            write(io, "\n# Instantiate and precompile packages for project (may download artifacts)\n")
-            write(io, "echo \"Instantiating and precompiling packages...\"\n")
-            write(io, "$(get(args, "julia-exec", "julia")) --project=./env_nethive_multiverse -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'\n")
-        end
-        
+
         write(io, "\n# Configuration mapping based on array task ID\n")
         write(io, "case \$SLURM_ARRAY_TASK_ID in\n")
         
@@ -486,12 +518,40 @@ function create_job_array_script(output_dir::String, configs::Vector{Dict}, args
         write(io, "    ;;\n")
         write(io, "esac\n")
         
+        # should make the runs start faster, if not delete and just rely on the per-job depot to avoid contention
+        #write(io, "export JULIA_PKG_PRECOMPILE_AUTO=0\n")
+        #write(io, "export JULIA_PKG_USE_CLI_GIT=true\n")
+
         write(io, "\n# Run simulation\n")
-        write(io, "echo \"Starting Julia simulation at...\"\n")
+        write(io, "echo \"Starting Julia simulation at: \$(date)\"\n")
+
         julia_exec = get(args, "julia-exec", "julia")
-        write(io, "$(julia_exec) run_simulation.jl --config \$CONFIG_FILE --output-dir $(output_dir)/data --base-name \$BASE_NAME --timestamp --verbose --save-results\n")
-        
-        write(io, "\necho \"Job finished at: \$(date)\"\n")
+
+        #write(io, "CMD=\"$(julia_exec) --project=./env_nethive_multiverse run_simulation.jl --config \\\"\\\$CONFIG_FILE\\\" --output-dir \\\"$(output_dir)/data\\\" --base-name \\\"\\\$BASE_NAME\\\" --timestamp --verbose --save-results\"\n")
+        #write(io, "echo \"\$CMD\"\n")
+        #write(io, "srun --ntasks=1 --cpu-bind=cores bash -c \"\$CMD\"\n")
+
+        # Run simulation (no bash -c, call julia directly)
+
+        write(io,
+            "echo \"Running: $(julia_exec) --project=./env_nethive_multiverse run_simulation.jl " *
+            "--config \\\"\\\$CONFIG_FILE\\\" --output-dir \\\"$(output_dir)/data\\\" " *
+            "--base-name \\\"\\\$BASE_NAME\\\" --timestamp --verbose --save-results\"\n"
+        )
+
+
+
+        write(io, "srun --ntasks=1 --cpu-bind=cores \\\n")
+        write(io, "  $(julia_exec) --project=./env_nethive_multiverse run_simulation.jl \\\n")
+        write(io, "  --config \"\$CONFIG_FILE\" \\\n")
+        write(io, "  --output-dir \"$(output_dir)/data\" \\\n")
+        write(io, "  --base-name \"\$BASE_NAME\" \\\n")
+        write(io, "  --timestamp --verbose --save-results\n")
+
+
+        write(io, "echo \"Julia exit code: \$?\"\n")
+        write(io, "echo \"Job finished at: \$(date)\"\n")
+
     end
     
     # Make executable
@@ -769,4 +829,138 @@ end
 # Run main if this file is executed directly
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
+end
+
+
+
+
+
+function create_job_array_script_old(output_dir::String, configs::Vector{Dict}, args::Dict)
+    """Create a single job array script instead of individual scripts"""
+    
+    # Create the main job array script
+    array_script = joinpath(output_dir, "job_array.slurm")
+    
+    # Calculate array size
+    n_jobs = length(configs)
+    max_concurrent = min(args["array-max"], n_jobs)
+    
+    open(array_script, "w") do io
+        write(io, "#!/bin/bash\n")
+        write(io, "#SBATCH --job-name=bee_sim_array\n")
+        write(io, "#SBATCH --partition=$(args["partition"])\n") 
+        write(io, "#SBATCH --time=$(args["time"])\n")
+        write(io, "#SBATCH --mem=$(args["memory"])G\n")
+        write(io, "#SBATCH --cpus-per-task=$(args["cpus"])\n")
+        write(io, "#SBATCH --array=1-$(n_jobs)%$(max_concurrent)\n")  # Job array with throttling
+        write(io, "#SBATCH --output=$(output_dir)/logs/job_%A_%a.out\n")  # %A = job ID, %a = array index
+        write(io, "#SBATCH --error=$(output_dir)/logs/job_%A_%a.err\n")
+        
+        if !isempty(args["email"])
+            write(io, "#SBATCH --mail-type=END,FAIL\n")
+            write(io, "#SBATCH --mail-user=$(args["email"])\n")
+        end
+        
+        write(io, "\n# Job array information\n")
+        write(io, "echo \"Job array started at: \$(date)\"\n")
+        write(io, "echo \"Job ID: \$SLURM_JOB_ID\"\n") 
+        write(io, "echo \"Array Job ID: \$SLURM_ARRAY_JOB_ID\"\n")
+        write(io, "echo \"Array Task ID: \$SLURM_ARRAY_TASK_ID\"\n")
+        write(io, "echo \"Node: \$SLURM_NODELIST\"\n")
+        
+        write(io, "\n# Load modules (required for cluster compatibility)\n")
+        write(io, "echo \"Loading Julia module...\"\n")
+        julia_module = get(args, "julia-module", "")
+        if julia_module != ""
+            write(io, "module load $(julia_module)\n")
+        else
+            write(io, "module load julia\n")
+        end
+        write(io, "echo \"Module loaded: \$(which julia)\"\n")
+        
+        write(io, "\n# Change to project directory\n")
+        write(io, "echo \"Changing to project directory...\"\n")
+        write(io, "cd \$SLURM_SUBMIT_DIR\n")
+        write(io, "echo \"Current directory: \$(pwd)\"\n")
+        
+        write(io, "\n# Set Julia project environment\n")
+        write(io, "export JULIA_PROJECT=./env_nethive_multiverse\n")
+
+        use_per_job_depot = !get(args, "no-per-job-depot", false)
+        if use_per_job_depot
+            write(io, "\n# Use per-job JULIA_DEPOT_PATH to reduce shared-depot locking/contention\n")
+            write(io, "export JULIA_DEPOT_PATH=\"")
+            write(io, string(Char(36)))
+            write(io, "{SCRATCH:-/scratch}/")
+            write(io, string(Char(36)))
+            write(io, "USER/julia_depot/")
+            write(io, string(Char(36)))
+            write(io, "SLURM_JOB_ID\"\n")
+            write(io, "mkdir -p \"")
+            write(io, string(Char(36)))
+            write(io, "JULIA_DEPOT_PATH\"\n")
+        end
+
+        if get(args, "precompile-on-start", false)
+            write(io, "\n# Instantiate and precompile packages for project (may download artifacts)\n")
+            write(io, "echo \"Instantiating and precompiling packages...\"\n")
+            write(io, "$(get(args, "julia-exec", "julia")) --project=./env_nethive_multiverse -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'\n")
+        end
+        
+        write(io, "\n# Configuration mapping based on array task ID\n")
+        write(io, "case \$SLURM_ARRAY_TASK_ID in\n")
+        
+        for (i, config) in enumerate(configs)
+            param_id = get(config, "param_id", i)
+            rep_id = get(config, "replicate_id", 1)
+            job_base_name = "param_$(param_id)_rep_$(rep_id)"
+            config_path = joinpath(output_dir, "configs", "config_$(i).json")
+            
+            write(io, "  $(i))\n")
+            write(io, "    echo \"Running parameter combination $(param_id), replicate $(rep_id)\"\n")
+            write(io, "    CONFIG_FILE=\"$(config_path)\"\n")
+            write(io, "    BASE_NAME=\"$(job_base_name)\"\n")
+            write(io, "    ;;\n")
+        end
+        
+        write(io, "  *)\n")
+        write(io, "    echo \"Error: Unknown array task ID \$SLURM_ARRAY_TASK_ID\"\n")
+        write(io, "    exit 1\n")
+        write(io, "    ;;\n")
+        write(io, "esac\n")
+        
+        write(io, "\n# Run simulation\n")
+        write(io, "echo \"Starting Julia simulation at...\"\n")
+        julia_exec = get(args, "julia-exec", "julia")
+        write(io, "$(julia_exec) run_simulation.jl --config \$CONFIG_FILE --output-dir $(output_dir)/data --base-name \$BASE_NAME --timestamp --verbose --save-results\n")
+        
+        write(io, "\necho \"Job finished at: \$(date)\"\n")
+    end
+    
+    # Make executable
+    run(`chmod +x $(array_script)`)
+    
+    return array_script
+end
+
+function create_array_submission_script(output_dir::String, array_script::String)
+    """Create submission script for job array"""
+    submit_script = joinpath(output_dir, "submit_array.sh")
+    
+    open(submit_script, "w") do io
+        write(io, "#!/bin/bash\n")
+        write(io, "# Submit job array for bee simulation parameter sweep\n\n")
+        
+        write(io, "echo \"Submitting job array: $(basename(array_script))\"\n")
+        write(io, "sbatch $(array_script)\n\n")
+        
+        write(io, "echo \"Job array submitted!\"\n")
+        write(io, "echo \"Check status with: squeue -u \$USER\"\n")
+        write(io, "echo \"Monitor progress in: $(output_dir)/logs/\"\n")
+    end
+    
+    # Make executable
+    run(`chmod +x $(submit_script)`)
+    
+    return submit_script
 end

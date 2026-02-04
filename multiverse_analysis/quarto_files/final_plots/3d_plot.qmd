@@ -1,11 +1,13 @@
 ```{julia}
 run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/5b5t_01lr_illustrate/data/param_8_rep_1"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/data/param_84_rep_2"
 ```
 
 # load data
 
 ```{julia}
 log = load_log(run_path)
+states = CSV.read(joinpath(run_path,"states.csv"), DataFrame)
 config = load_config(joinpath(run_path, "config.json"))
 mapping = load_task_index_mapping(run_path)
 ```

@@ -1,8 +1,10 @@
-using Pkg
-Pkg.activate("./env_nethive_multiverse/")
+#using Pkg
+#Pkg.activate("./env_nethive_multiverse/")
 #Pkg.instantiate()
 
 # Load packages directly (they should be available via JULIA_PROJECT)
+@info "DEPOT_PATH" DEPOT_PATH
+
 using ArgParse
 using CSV
 using DataFrames
@@ -24,6 +26,16 @@ include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 include("src/data/prepare_gaussset.jl")
+
+function memtag(tag)
+    println("\n=== $tag ===")
+    GC.gc()
+    println("time: ", time())
+    println("Sys.total_memory(): ", Sys.total_memory() ÷ 2^30, " GiB")
+    println("Sys.free_memory():  ", Sys.free_memory()  ÷ 2^30, " GiB")
+    println("GC live bytes:      ", Base.gc_live_bytes() ÷ 2^20, " MiB")
+    println("maxrss (kB):        ", Sys.maxrss())
+end
 
 function parse_commandline()
     s = ArgParseSettings(description = "Run Gillespie NN simulations with flexible configuration")
@@ -267,9 +279,12 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
         gauss_dataset_dir = config["gauss_dataset_dir"]
         gauss_dataset_name = config["gauss_dataset_name"]
         gauss_dataset_path = joinpath(gauss_dataset_dir, gauss_dataset_name)
+        memtag("Before loading Gaussian dataset")
         all_datasets = load_gauss_dataset(gauss_dataset_path)
         dataset_conf = load_gauss_metadata(gauss_dataset_dir)
+        memtag("After loading Gaussian dataset")
         loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
+        memtag("After preparing Gaussian data loaders")
 
         model_template = create_gauss_model_template(dataset_conf["features_dimension"], dataset_conf["n_classes"])
         config["dataset_names"] = Symbol.("task_$(i)" for i in 1:config["n_tasks"])

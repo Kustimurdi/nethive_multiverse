@@ -27,11 +27,11 @@ include("src/core/save_data.jl")
 file_dir = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/gauss_datasets"
 name = now()
 name = Dates.format(name, "yyyymmddHHMMSS")
-file_path = string(file_dir, "/gauss_dataset_", name, ".jld2")
+file_path = string(file_dir, "/gauss_dataset_100a100t_", name, ".jld2")
 
 config = Dict(
-    "n_classes" => 15,
-    "n_tasks" => 15,
+    "n_classes" => 100,
+    "n_tasks" => 100,
     "features_dimension" => 10,
     "n_per_class_train" => 100,
     "n_per_class_test" => 50,

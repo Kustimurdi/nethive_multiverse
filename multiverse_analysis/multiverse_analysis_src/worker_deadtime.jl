@@ -1,4 +1,4 @@
-function getting_the_final_states(log::DataFrame)
+fevent_log.timeunction getting_the_final_states(log::DataFrame)
     
 end
 

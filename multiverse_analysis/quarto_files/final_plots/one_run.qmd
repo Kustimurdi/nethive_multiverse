@@ -7,6 +7,9 @@ folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2
 folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_plastic"
 folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t2000e_car_wine_wdbc"
 folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t15c10000e5-6lr100ls_full_phase_diagram"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t5-6lr_missing_runs/"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/20b10t_plastic/"
 data_path = joinpath(folder_path, "data/")
 master_df = build_master_dataframe(data_path)
 ```
@@ -21,10 +24,10 @@ println("master df unique sigmoid sensitivity: ", unique(master_df.lambda_sensit
 ```
 
 ```{julia}
-ir = 50
+ir = 0.05
 dt = 1
 lr = 0.000005
-ls = 10000
+ls = 100
 df = subset(
     master_df,
     #:n_bees => ByRow(==(8)),
@@ -45,7 +48,10 @@ run_path = df.run_path[2]
 #run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_init/data/param_1_rep_1"
 #run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/2b2t_time_test/data/param_5_rep_1"
 #run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_illustrative/data/param_43_rep_1"
-run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/data/param_43_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/data/param_43_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/plasticity/20b10t_init/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t5-6lr_heaviside/data/param_81_rep_5"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/30b30t/a500t200/30b30t200dt500int_cont1/data/param_1_rep_1"
 states = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
 activity = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
 cfg = load_config(joinpath(run_path, "config.json"))
@@ -57,9 +63,25 @@ ls = cfg.lambda_sensitivity[1]
 ```
 
 ```{julia}
+run_path_init = "/project/theorie/n/N.Pfaffenzeller/results_project/30b30t/30b30t_high/data/param_3_rep_1/"
+run_path_cont = "/project/theorie/n/N.Pfaffenzeller/results_project/30b30t/a500t200/30b30t200dt500int_cont1/data/param_1_rep_1"
+df_init = CSV.read(joinpath(run_path_init, "states.csv"), DataFrame)
+config_init = load_config(joinpath(run_path_init, "config.json"))
+df_cont = CSV.read(joinpath(run_path_cont, "states.csv"), DataFrame)
+config_cont = load_config(joinpath(run_path_cont, "config.json"))
+
+```
+
+```{julia}
+n_epochs_init = maximum(df_init.epoch)
+df_cont.epoch .+= n_epochs_init
+states = vcat(df_init, df_cont)
+```
+
+```{julia}
 labelsize = 32
 ticklabelsize = 28
-one_fig = Makie.Figure(resolution = (800, cfg[!, :n_bees][1]*300))
+one_fig = Makie.Figure(resolution = (800, cfg[!, :n_tasks][1]*300))
 agentids = unique(states.bee_id)
 taskids = unique(states.task_id)
 for (i,t) in enumerate(taskids)
@@ -94,18 +116,57 @@ one_fig
 
 ```{julia}
 save_dir_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
-save_path = joinpath(save_dir_path, "3b3t_real")
+save_path = joinpath(save_dir_path, "acc_evolution_plots")
 if !isdir(save_path)
     mkdir(save_path)
 end
 run_name = basename(run_path)
 folder_name = basename(dirname(dirname(run_path)))
 timestamp = Dates.format(now(), "yyyy-mm-dd_HHMM")
-descriptor = "half_model_ir_$(ir)_dt_$(dt)_lr_$(lr)_ls_$(ls)"
-name = "3b3t_real_$(folder_name)_$(run_name)_$(descriptor)_$(timestamp)"
+descriptor = "lr_$(lr)_ir_$(ir)_dt_$(dt)_ls_$(ls)"
+name = "10b10t_$(folder_name)_$(run_name)_$(descriptor)_$(timestamp)"
 #name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
 save(joinpath(save_path, "$(name).pdf"), one_fig)
 save(joinpath(save_path, "$(name).png"), one_fig)
+```
+
+# plotting the agents
+
+
+```{julia}
+labelsize = 32
+ticklabelsize = 28
+one_fig = Makie.Figure(resolution = (800, cfg[!, :n_bees][1]*300))
+agentids = unique(states.bee_id)
+taskids = unique(states.task_id)
+for (i,a) in enumerate(agentids)
+    a_df = subset(
+        states,
+        :bee_id => ByRow(==(a))
+    )
+    ax = Makie.Axis(
+        one_fig[i,1], #xlabel=L"\text{epoch}", ylabel=L"\text{accuracy}", 
+        title= "Agent $a", 
+        titlesize=labelsize,
+        xlabelsize=labelsize,
+        ylabelsize=labelsize,
+        xticklabelsize=ticklabelsize,
+        yticklabelsize=ticklabelsize
+        )
+    for t in taskids
+        t_df = subset(
+            a_df,
+            :task_id => ByRow(==(t))
+        )
+        Makie.lines!(ax, t_df.epoch, t_df.accuracies)
+    end
+end
+#one_fig[3, 1] = Label(one_fig, L"\text{epoch}", fontsize=labelsize)
+#one_fig[1:2, 0]  = Label(one_fig, L"\text{accuracy}", rotation=pi/2, fontsize=labelsize)
+```
+
+```{julia}
+one_fig
 ```
 
 # quickly skimming over runs
@@ -130,4 +191,41 @@ sub = subset(
 
 ```{julia}
 run_path = sub.param_dir[3]
+```
+
+# calculating average s_L
+
+```{julia}
+ss = subset(
+    states,
+    :task_id => ByRow(x -> x == 17),
+    :accuracies => ByRow(x -> x >= 0.9),
+    #:bee_id => ByRow(x -> x == 5),
+    #:epoch => ByRow(x -> x >= 5000)
+)
+```
+
+```{julia}
+mean_acc = mean(ss.accuracies)
+println("mean acc: ", mean_acc)
+```
+
+```{julia}
+act = CSV.read(joinpath(run_path_cont, "activity.csv"), DataFrame)
+act.epoch .+= n_epochs_init
+```
+```{julia}
+ss = subset(
+    act,
+    #:task_id => ByRow(x -> x == 17),
+    #:bee_id => ByRow(x -> x == 9),
+    :epoch => ByRow(x -> (x >= 3000 && x <= 3500))
+)
+stats = combine(groupby(ss, :bee_id),
+    :suppressed => (v -> mean(v)) => :frac_suppressed,
+    nrow => :n
+)
+
+sort!(stats, :frac_suppressed)   # lowest first (the "exception" should pop out)
+stats
 ```

@@ -1,0 +1,24 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/steffen_scores/steffen_score_long.jl")
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/plasticity/20b10t_init/data/param_1_rep_1"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/plasticity/20b10t_init/"
+```
+
+```{julia}
+states = CSV.read(joinpath(run_path,"states.csv"), DataFrame)
+config = load_config(joinpath(run_path, "config.json"))
+mapping = load_task_index_mapping(run_path)
+```
+
+```{julia}
+runs = collect_runs_long([folder_path])
+out = steffen_scores_one_run_long(runs[1]; thresholds=[0.8, 0.9],
+                                time_points=nothing)
+```
+
+```{julia}
+sub = subset(
+    out,
+    :threshold => ByRow(==(0.9))
+)
+```

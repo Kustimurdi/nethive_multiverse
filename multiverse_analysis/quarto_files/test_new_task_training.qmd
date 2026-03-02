@@ -215,3 +215,7 @@ out = steffen_scores_one_run_long(run)
 ```{julia}
 folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/analysis"
 ```
+
+```{julia}
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/50b50t/steffen_scores_50b50t_full_2026-02-10_1211.csv", DataFrame)
+```

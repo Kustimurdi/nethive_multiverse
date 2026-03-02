@@ -1,12 +1,17 @@
 ```{julia}
 using Pkg
-Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_multiverse_analysis")
 #using GLMakie
 using Dates
 using Statistics
 using CairoMakie
-using GLMakie
+#using GLMakie
 using LaTeXStrings
+using AlgebraOfGraphics
+using CSV
+using DataFrames
+using GeometryBasics
+using Colors
 ```
 
 ```{julia}

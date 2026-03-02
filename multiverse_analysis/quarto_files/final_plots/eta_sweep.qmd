@@ -3,15 +3,19 @@
 #st1 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1851.csv", DataFrame)
 st1 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_2026-01-25_1851.csv", DataFrame)
 st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_add_v12026-01-26_1158.csv", DataFrame)
+st3 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_vert_rechts_second_half_2026-02-06_1047.csv", DataFrame)
+st4 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/steffen_scores_5b5t_eta_sweep_vert_rechts_2026-02-04_1559_not_final.csv", DataFrame) # placeholder for potential additional data
 ```
 
 ```{julia}
-st = vcat(st1, st2)
+st = vcat(st1, st2, st3, st4)
+st = subset(st, :lambda_sensitivity => ByRow(>=(1.0)))
 ```
 
 ```{julia}
 st.alphatau = st.interaction_rate .* st.dead_time
 st.alphatau = round.(st.alphatau; digits = 5)
+st = subset(st, :alphatau => ByRow(>=(1)))  # filter for specific alpha*tau value
 ```
 
 ```{julia}
@@ -31,6 +35,8 @@ end
 df_sel.any_ratio = df_sel.any_geq ./ df_sel.n_bees
 df_sel.exactly_ratio = df_sel.exactly_one_geq ./ df_sel.n_bees
 df_sel.unique_ratio = df_sel.unique_specialist ./ df_sel.n_bees
+df_sel.any_excactly_diff = df_sel.any_ratio - df_sel.exactly_ratio
+df_sel.exactly_unique_diff = df_sel.exactly_ratio - df_sel.unique_ratio
 ```
 
 ```{julia}
@@ -40,6 +46,10 @@ agg = combine(
     :unique_ratio => std  => :unique_ratio_std,
     :exactly_ratio => mean => :exactly_ratio_mean,
     :exactly_ratio => std  => :exactly_ratio_std,
+    :any_excactly_diff => mean => :any_exactly_diff_mean,
+    :any_excactly_diff => std  => :any_exactly_diff_std,
+    :exactly_unique_diff => mean => :exactly_unique_diff_mean,
+    :exactly_unique_diff => std  => :exactly_unique_diff_std,
     :any_ratio => mean => :any_ratio_mean,
     :any_ratio => std  => :any_ratio_std,
     :avg_agents_geq_per_task => mean => :avg_agents_mean,
@@ -52,14 +62,19 @@ agg = combine(
 ```{julia}
 xcol = :alphatau
 ycol = :lambda_sensitivity
-#valcol = :unique_ratio_mean
+valcol = :unique_ratio_mean
 #valcol = :unique_ratio_std
 #valcol = :avg_agents_mean
 #valcol = :avg_agents_std
 #valcol = :any_ratio_mean
 #valcol = :any_ratio_std
-valcol = :avg_agents_mean
+#valcol = :avg_agents_mean
 #valcol = :avg_agents_std
+#valcol = :any_exactly_diff_mean
+#valcol = :any_exactly_diff_std
+valcol = :exactly_unique_diff_mean
+#valcol = :exactly_unique_diff_std
+#valcol = :n_rows
 
 xs = sort(unique(agg[:, xcol]))
 ys = sort(unique(agg[:, ycol]))
@@ -75,7 +90,7 @@ end
 
 ```{julia}
 title = "2b2t15c: $(string(valcol))"
-heat_fig = Figure(resolution=(800,600))
+heat_fig = Figure(resolution=(800,700))
 labelsize = 32
 ticklabelsize = 28
 ax = Axis(heat_fig[1,1], 
@@ -103,9 +118,10 @@ ytick_vals = intersect(ys, powers)
 xtick_pos = [xi[v] for v in xtick_vals] 
 ytick_pos = [yi[v] for v in ytick_vals] 
 #xticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}"]
-yticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}", L"10^{5}"]
+#yticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}", L"10^{5}"]
+yticks = [L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}", L"10^{5}"]
 
-deleteat!(xtick_pos, 1:2)
+#deleteat!(xtick_pos, 1:2)
 xticks = [L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}", L"10^{4}"]
 #ax.xticks = (xtick_pos, string.(xtick_vals))
 #ax.yticks = (ytick_pos, string.(ytick_vals))
@@ -118,14 +134,15 @@ cb = Colorbar(heat_fig[1,2],
         #label = L"\text{Standard deviation of the highest Accuracy}",
         #label = L"\text{Standard deviation of the Coverage Fraction}",
         #label = "$(valcol)",
-        label = L"\text{Degree of Specialization}",
+        #label = L"\text{Degree of Specialization}",
         labelsize = labelsize,
         ticklabelsize = ticklabelsize)
 #cb.ticks = ([0.85, 0.90, 0.95], [L"0.85", L"0.90", L"0.95"]) #mean coverage
 #cb.ticks = ([0.6, 0.7, 0.8, 0.9, 1.0], [L"0.6", L"0.7", L"0.8", L"0.9", L"1.0"]) #mean accuracy
 #cb.ticks = ([0.0, 0.1, 0.2, 0.3, 0.4], [L"0.0", L"0.1", L"0.2", L"0.3", L"0.4"]) #std accuracy
 #cb.ticks = ([0.0, 0.1, 0.2, 0.3], [L"0.0", L"0.1", L"0.2", L"0.3"]) #std coverage
-cb.ticks = ([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [L"0.0", L"0.2", L"0.4", L"0.6", L"0.8", L"1.0"])
+#cb.ticks = ([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [L"0.0", L"0.2", L"0.4", L"0.6", L"0.8", L"1.0"])
+#cb.ticks = ([0.0, 0.5, 1.0], [L"0.0", L"0.5", L"1.0"]) #mean coverage
 ```
 
 ```{julia}
@@ -134,13 +151,13 @@ display(heat_fig)
 
 ```{julia}
 folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
-save_path = joinpath(folder_path, "eta_sweep_plots")
+save_path = joinpath(folder_path, "eta_sweep_plots_new")
 if !isdir(save_path)
     mkdir(save_path)
 end
 descriptor = "$(valcol)"
 lr = st.learning_rate[1]
-name = "5b5t_eta_sweep_cleaned_up_$(lr)_$(string(valcol))_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
+name = "5b5t_eta_sweep_$(lr)_$(string(valcol))_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
 #name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
 save(joinpath(save_path, "$(name).pdf"), heat_fig)
 save(joinpath(save_path, "$(name).png"), heat_fig)

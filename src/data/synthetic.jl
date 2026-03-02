@@ -94,8 +94,11 @@ function create_gauss_loaders(train_data::Tuple, test_data::Tuple; batchsize=32,
     train_x, train_y = train_data
     test_x, test_y = test_data
 
-    train_y_onehot = Flux.onehotbatch(train_y, 1:maximum(train_y))
-    test_y_onehot = Flux.onehotbatch(test_y, 1:maximum(test_y))
+    train_x = Float32.(train_x)
+    test_x = Float32.(test_x)
+
+    train_y_onehot = Float32.(Flux.onehotbatch(train_y, 1:maximum(train_y)))
+    test_y_onehot = Float32.(Flux.onehotbatch(test_y, 1:maximum(test_y)))
     
     # Create proper Flux DataLoaders
     train_loader = Flux.DataLoader(

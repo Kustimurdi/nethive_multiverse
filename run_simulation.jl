@@ -374,7 +374,7 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
                                 save_states=true,
                                 save_activity=true,
                                 save_events=true,
-                                save_losses=true)
+                                save_losses=false)
     else
         println("Saving summary results...")
         save_simulation_results(results, run_output_dir)

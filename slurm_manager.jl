@@ -56,11 +56,11 @@ function parse_slurm_args()
         "--memory", "-m"
             help = "Memory per job (GB)"
             arg_type = Int
-            default = 8
+            default = 3
         "--cpus"
             help = "CPUs per job"
             arg_type = Int
-            default = 4
+            default = 1
         "--array-max"
             help = "Maximum number of simultaneous array jobs"
             arg_type = Int

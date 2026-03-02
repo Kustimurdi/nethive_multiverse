@@ -100,6 +100,8 @@ function calc_classification_accuracy(model, dataloader; num_batches::Int=typema
     total = 0
     
     for (x_batch, y_batch) in Iterators.take(dataloader, num_batches)
+        x_batch = Float32.(x_batch)
+        y_batch = Float32.(y_batch)
 
         # Get predicted class indices (highest output)
         preds = Flux.onecold(model(x_batch))
@@ -136,6 +138,8 @@ function calc_classification_loss(model, dataloader; num_batches::Int=typemax(In
     loss_fn(x, y) = Flux.Losses.logitcrossentropy(model(x), y)
     
     for (x_batch, y_batch) in Iterators.take(dataloader, num_batches)
+        x_batch = Float32.(x_batch)
+        y_batch = Float32.(y_batch)
         total_loss += loss_fn(x_batch, y_batch)
         n_batches += 1
     end
@@ -172,7 +176,9 @@ function evaluate_bee_on_task(hive::MultiTaskHive, bee_idx::Int, task_idx::Int, 
     model = hive.brains[bee_idx]
 
     accuracy = calc_classification_accuracy(model, test_loader)
-    loss = calc_classification_loss(model, test_loader)
+    # if you want loss as well, uncomment the next line
+    #loss = calc_classification_loss(model, test_loader)
+    loss = NaN
     
     return accuracy, loss
 end

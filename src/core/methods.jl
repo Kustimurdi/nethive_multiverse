@@ -355,7 +355,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
     end
 
     performance_history[1, :, :] .= hive.queen_genes
-    loss_history[1, :, :] .= hive.losses
+    #loss_history[1, :, :] .= hive.losses
     suppression_history[1, :, :] .= hive.suppressed_tasks
 
     for epoch in 1:hive.config.n_epochs
@@ -372,7 +372,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
         end
 
         performance_history[1+epoch, :, :] .= hive.queen_genes
-        loss_history[1+epoch, :, :] .= hive.losses
+        #loss_history[1+epoch, :, :] .= hive.losses
         suppression_history[1+epoch, :, :] .= hive.suppressed_tasks
 
         if (hive.config.save_nn_epochs) > 0 && (epoch % hive.config.save_nn_epochs == 0)
@@ -391,7 +391,7 @@ function run_gillespie_simulation!(hive::MultiTaskHive, loaders::Dict, output_di
             #Suppression Events: $(sum(suppression_count[epoch,:, :, :]))")
         end
 
-        if epoch % 1000 == 0
+        if epoch % 100000 == 0
             dir_path = joinpath(output_dir, foldername)
             dir_path = joinpath(dir_path, "check_files/")
             println("dir path: $dir_path, epoch: $epoch")

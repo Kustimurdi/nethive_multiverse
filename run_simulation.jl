@@ -600,16 +600,16 @@ function main()
     # Run simulation
     
     # Saving in alternative directory structure
-    println("args outputdir: ", args["output-dir"])
-    folder_name = basename(dirname(args["output-dir"]))
-    alt_dir = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint"
-    alt_output_dir = joinpath(alt_dir, folder_name, "data")
-    println("alt output dir: ", alt_output_dir)
+    #println("args outputdir: ", args["output-dir"])
+    #folder_name = basename(dirname(args["output-dir"]))
+    #alt_dir = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint"
+    #alt_output_dir = joinpath(alt_dir, folder_name, "data")
+    #println("alt output dir: ", alt_output_dir)
 
     results = run_single_simulation(
         config,
-        #args["output-dir"],
-        alt_output_dir,
+        args["output-dir"],
+        #alt_output_dir,
         args["base-name"];
         timestamp=args["timestamp"],
         verbose=args["verbose"],

@@ -1,0 +1,143 @@
+```{julia}
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t1000it1000dt_eta_sweep/"
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+ss = subset(
+    master_df,
+    :lambda_sensitivity => ByRow(x -> x == 100),
+    #:interaction_rate => ByRow(x -> x == 1),
+    #:dead_time => ByRow(x -> x == 10)
+)
+```
+
+```{julia}
+run_path = ss.run_path[2]
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t100dt100int_cont1/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t_high/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t100dt100int_cont1/data/param_1_rep_1/"
+st = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+config = load_config(joinpath(run_path, "config.json"))
+act = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
+```
+
+# filtering out all specializing agents
+
+```{julia}
+final_epoch = maximum(st.epoch)
+
+good_bees = unique(st.bee_id[(st.epoch .== final_epoch) .& (st.accuracies .>= 0.8)])
+
+act_filtered = subset(act, :bee_id => ByRow(b -> !(b in good_bees)))
+
+```
+
+# statistics for suppression time distribution
+
+```{julia}
+act_win = subset(act_filtered, :epoch => ByRow(>(10)))
+```
+
+```{julia}
+per_bee_task = combine(groupby(act_win, [:task_id, :bee_id]),
+    :suppressed => (s -> sum(s)) => :suppressed_epochs,
+    :suppressed => length => :n_epochs
+)
+per_bee_task.suppressed_frac = per_bee_task.suppressed_epochs ./ per_bee_task.n_epochs
+```
+
+```{julia}
+task_summary = combine(groupby(per_bee_task, :task_id),
+    :suppressed_epochs => mean => :epochs_mean,
+    :suppressed_epochs => std  => :epochs_std,
+    :suppressed_epochs => minimum => :epochs_min,
+    :suppressed_epochs => median  => :epochs_median,
+    :suppressed_epochs => maximum => :epochs_max,
+
+    :suppressed_frac => mean => :frac_mean,
+    :suppressed_frac => std  => :frac_std,
+    :suppressed_frac => minimum => :frac_min,
+    :suppressed_frac => median  => :frac_median,
+    :suppressed_frac => maximum => :frac_max,
+    :suppressed_frac => (x -> quantile(x, 0.25)) => :frac_q25,
+    :suppressed_frac => (x -> quantile(x, 0.75)) => :frac_q75,
+)
+```
+
+# statistics for initial accuracy distribution
+
+```{julia}
+# bees that remain after your filtering
+remaining_bees = unique(act_filtered.bee_id)
+epoch = 0
+
+st0 = subset(st,
+    :epoch  => ByRow(==(epoch)),
+    :bee_id => ByRow(in(remaining_bees)),
+    #:task_id => ByRow(in(1:10))
+)
+
+# sanity: one row per (bee, task) at epoch 0
+# nrow(st0) should be length(remaining_bees) * n_tasks
+```
+
+# global statistics for initial accuracy distribution
+
+```{julia}
+rmax = st0[argmax(st0.accuracies), :]
+rmin = st0[argmin(st0.accuracies), :]
+
+println("Global max @ epoch $epoch: bee=$(rmax.bee_id), task=$(rmax.task_id), acc=$(rmax.accuracies)")
+println("Global min @ epoch $epoch: bee=$(rmin.bee_id), task=$(rmin.task_id), acc=$(rmin.accuracies)")
+```
+
+```{julia}
+using DataFrames, Statistics
+
+task_init_stats = combine(groupby(st0, :task_id),
+    :accuracies => minimum => :acc0_min,
+    :accuracies => maximum => :acc0_max,
+)
+task_init_stats.acc0_spread = task_init_stats.acc0_max .- task_init_stats.acc0_min
+task_init_stats
+```
+
+```{julia}
+max = maximum(task_init_stats.acc0_max)
+task_init_stats[task_init_stats.acc0_max .== max, :]
+```
+
+```{julia}
+max_spread = maximum(task_init_stats.acc0_spread)
+task_init_stats[task_init_stats.acc0_spread .== max_spread, :]
+```
+
+# sum of rates
+
+```{julia}
+using DataFrames, Statistics
+
+# stable sigmoid
+sigma(x) = inv(1 + exp(-x))
+
+function quantity_for_task(accs::AbstractVector{<:Real}, eta=1.0)
+    h = maximum(accs)
+    # exclude all entries equal to the maximum (handles ties)
+    s = sum(a * sigma(eta*(a - h)) for a in accs if a != h)
+    return h * s
+end
+
+# ---- compute for ALL tasks at a chosen epoch ----
+epoch_sel = maximum(st.epoch)  # or set e.g. 10000
+epoch_sel = minimum(st.epoch)  # or set e.g. 10000
+
+st_e = subset(st, :epoch => ByRow(==(epoch_sel)))
+
+q_by_task = combine(groupby(st_e, :task_id),
+    :accuracies => (a -> quantity_for_task(a, 100.0)) => :Q
+)
+
+q_by_task
+```

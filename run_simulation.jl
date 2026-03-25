@@ -26,6 +26,7 @@ include("src/core/multitask_training.jl")
 include("src/core/methods.jl")
 include("src/core/save_data.jl")
 include("src/data/prepare_gaussset.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/task_loading.jl")
 
 function memtag(tag)
     println("\n=== $tag ===")
@@ -206,39 +207,149 @@ function initialize_hive_from_config(config::Dict, model_template::Function)
     return hive
 end
 
-"""
-Overwrite the overlapping top-left region of `dest` with `src`.
-Only the overlapping entries are overwritten; the rest of `dest` is left untouched.
-This works in-place and returns `dest`.
-"""
-function overwrite_overlap!(dest::AbstractMatrix, src::AbstractMatrix)
-    m = min(size(dest,1), size(src,1))
-    n = min(size(dest,2), size(src,2))
-    dest[1:m, 1:n] .= src[1:m, 1:n]
-    return dest
+function verify_loaded_model_once(model_template, loaded_model, model_state; features_dimension::Int)
+    rng = MersenneTwister(0)
+    x = rand(rng, Float32, features_dimension)   # shape matches Dense(in, out)
+
+    # reference model built from template + same state
+    ref = model_template()
+    Flux.loadmodel!(ref, model_state)
+
+    y_loaded = loaded_model(x)
+    y_ref    = ref(x)
+
+    println("Verifying loaded model matches saved state on a test input...")
+    @assert y_loaded == y_ref  # should be EXACT for this architecture
+    return true
 end
 
-function load_models_into_hive!(hive::MultiTaskHive, model_dir::String)
-    """Load pre-trained models into the hive from specified directory"""
-    for (bee_idx, brain) in enumerate(hive.brains)
-        model_path = joinpath(model_dir, "bee_$(bee_idx)_model.jdl2")
-        if isfile(model_path)
-            @info "Loading model for bee $(bee_idx) from $model_path"
-            JLD2.@load model_path model_state
-            Flux.loadmodel!(brain, model_state)
+function model_fingerprint(m; k=16)
+    ps = collect(Flux.params(m))
+    a = vec(Array(first(ps)))
+    k = min(k, length(a))
+    return a[1:k]
+end
+
+"""
+    load_models_into_hive!(hive, model_dir; rng=Random.default_rng(), shuffle_if_subset=true)
+
+Load pre-trained models into the hive from `model_dir`.
+
+If the hive has fewer bees than the number of available saved models, a random subset
+of saved bees is selected (unless `shuffle_if_subset=false`).
+
+Returns a named tuple with metadata, in particular:
+- `hive_to_source_bee` : Vector{Int}  (index = hive bee id, value = source bee id from model_dir)
+- `source_to_hive_bee` : Dict{Int,Int}
+- `available_source_bees` : Vector{Int}
+"""
+function load_models_into_hive!(
+    hive::MultiTaskHive,
+    model_dir::String;
+    rng::AbstractRNG = Random.default_rng(),
+    shuffle_if_subset::Bool = true,
+)
+    n_hive = length(hive.brains)
+
+    # --- Find available saved bee models in directory ---
+    # Expected pattern: bee_<id>_model.jdl2
+    model_files = filter(f -> occursin(r"^bee_\d+_model\.jdl2$", f), readdir(model_dir))
+    available_source_bees = collect(parse(Int, match(r"^bee_(\d+)_model\.jdl2$", f).captures[1]) for f in model_files)
+    sort!(available_source_bees)
+
+    n_available = length(available_source_bees)
+    n_available == 0 && error("No model files found in $model_dir matching bee_<id>_model.jdl2")
+
+    if n_hive > n_available
+        error("Hive expects $n_hive bees, but only $n_available saved models were found in $model_dir")
+    end
+
+    # --- Choose which source bees to load ---
+    selected_source_bees =
+        if n_hive < n_available && shuffle_if_subset
+            sort(randperm(rng, n_available)[1:n_hive] .|> i -> available_source_bees[i])
         else
-            @warn "Model file not found for bee $(bee_idx): $model_path"
+            available_source_bees[1:n_hive]
+        end
+
+    @info "Loading $n_hive bee models into hive from $model_dir"
+    @info "Available source bees: $(available_source_bees)"
+    @info "Selected source bees:  $(selected_source_bees)"
+
+    # Mapping: hive bee 1..n_hive -> source bee id in old run
+    hive_to_source_bee = collect(selected_source_bees)
+    source_to_hive_bee = Dict(src => hive_idx for (hive_idx, src) in enumerate(hive_to_source_bee))
+
+    # --- Load selected models into hive slots 1:n_hive ---
+    for (hive_idx, source_bee_id) in enumerate(hive_to_source_bee)
+        model_path = joinpath(model_dir, "bee_$(source_bee_id)_model.jdl2")
+        if isfile(model_path)
+            @info "Loading source bee $(source_bee_id) into hive bee $(hive_idx) from $model_path"
+            JLD2.@load model_path model_state
+            before = model_fingerprint(hive.brains[hive_idx])
+            Flux.loadmodel!(hive.brains[hive_idx], model_state)
+            after  = model_fingerprint(hive.brains[hive_idx])
+            @assert before != after 
+            # Verify loaded model matches the saved state (sanity check)
+            verify_loaded_model_once(hive.config.model_template, hive.brains[hive_idx], model_state; features_dimension=hive.config.max_input_dim)
+        else
+            error("Selected model file not found: $model_path")
         end
     end
-    JLD2.@load joinpath(model_dir, "suppressed_tasks.jdl2") suppressed_tasks suppression_time_left
-    overwrite_overlap!(hive.suppressed_tasks, suppressed_tasks)
-    overwrite_overlap!(hive.suppression_start_times, suppression_time_left)
+
+    # --- Load suppression state and map rows consistently ---
+    sup_path = joinpath(model_dir, "suppressed_tasks.jdl2")
+    if isfile(sup_path)
+        JLD2.@load sup_path suppressed_tasks suppression_time_left
+
+        # Copy selected source rows into hive rows, and overlap in task dimension
+        overwrite_overlap_rows_cols!(
+            hive.suppressed_tasks,
+            suppressed_tasks,
+            hive_to_source_bee,        # source rows to take, one per hive row
+        )
+
+        overwrite_overlap_rows_cols!(
+            hive.suppression_start_times,
+            suppression_time_left,
+            hive_to_source_bee,
+        )
+
+        println("suppression state loaded")
+        println("quick test:")
+        println("hive row 1 corresponds to source bee $(hive_to_source_bee[1])")
+        println("suppressed equal? ", hive.suppressed_tasks[1,1] == suppressed_tasks[hive_to_source_bee[1],1])
+        println("suppression time equal? ", hive.suppression_start_times[1,1] == suppression_time_left[hive_to_source_bee[1],1])
+    else
+        @warn "suppressed_tasks.jdl2 not found in $model_dir, skipping suppression-state restore"
+    end
+
     println("models have been loaded")
-    println("quick test")
-    println("are the first elements the same?: ")
-    println(hive.suppression_start_times[1,1] == suppression_time_left[1,1])
-    println(hive.suppressed_tasks[1,1] == suppressed_tasks[1,1])
-    return nothing
+    return (
+        hive_to_source_bee = hive_to_source_bee,
+        source_to_hive_bee = source_to_hive_bee,
+        available_source_bees = available_source_bees,
+    )
+end
+
+"""
+Copy rows from `src` into `dest` using a row mapping:
+- dest row i gets src row row_map[i]
+- columns are copied on overlap only
+"""
+function overwrite_overlap_rows_cols!(
+    dest::AbstractMatrix,
+    src::AbstractMatrix,
+    row_map::AbstractVector{<:Integer},
+)
+    m = min(size(dest, 1), length(row_map))
+    n = min(size(dest, 2), size(src, 2))
+
+    @inbounds for i in 1:m
+        src_i = row_map[i]
+        dest[i, 1:n] .= src[src_i, 1:n]
+    end
+    return dest
 end
 
 function run_single_simulation(config::Dict, output_dir::String, foldername::String; 
@@ -280,15 +391,39 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
         gauss_dataset_name = config["gauss_dataset_name"]
         gauss_dataset_path = joinpath(gauss_dataset_dir, gauss_dataset_name)
         memtag("Before loading Gaussian dataset")
+        #all_datasets = load_gauss_dataset(gauss_dataset_path)
+        #dataset_conf = load_gauss_metadata(gauss_dataset_dir)
+        #n_total = length(all_datasets)
+
+        ## Reproducible RNG for task selection
+        #rng = haskey(config, "seed") ? MersenneTwister(config["seed"]) : Random.default_rng()
+
+        #mode = get(config, "task_selection_mode", "first") |> Symbol   # "first" or "random"
+        #task_ids = select_task_indices(config["n_tasks"], n_total; mode=mode, rng=rng)
+
+        #config["task_ids"] = task_ids
+        #config["dataset_names"] = Symbol.("task_$(i)" for i in task_ids)
+
+        #println("Selected task_ids: ", config["task_ids"])
+        #println("Dataset names: ", config["dataset_names"])
+
+        #memtag("After loading Gaussian dataset")
+        #loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
+        #memtag("After preparing Gaussian data loaders")
+
+        #model_template = create_gauss_model_template(dataset_conf["features_dimension"], dataset_conf["n_classes"])
+
         all_datasets = load_gauss_dataset(gauss_dataset_path)
         dataset_conf = load_gauss_metadata(gauss_dataset_dir)
-        memtag("After loading Gaussian dataset")
-        loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
-        memtag("After preparing Gaussian data loaders")
+        n_total = length(all_datasets)
 
+        rng = haskey(config, "seed") ? MersenneTwister(config["seed"]) : Random.default_rng()
+
+        # sets config["task_ids"] and config["dataset_names"], with restart logic
+        choose_tasks_with_restart_support!(config, n_total; rng=rng)
+
+        loaders = prepare_all_gauss_loaders(all_datasets; batchsize=config["batch_size"], shuffle_train=true)
         model_template = create_gauss_model_template(dataset_conf["features_dimension"], dataset_conf["n_classes"])
-        config["dataset_names"] = Symbol.("task_$(i)" for i in 1:config["n_tasks"])
-        println("Dataset names: ", config["dataset_names"])
 
     elseif get(config, "use_gauss", false) === false
         loaders, task_info, model_template = prepare_multitask_setup(config["dataset_names"]; 
@@ -315,10 +450,28 @@ function run_single_simulation(config::Dict, output_dir::String, foldername::Str
 
     hive = initialize_hive_from_config(config, model_template)
     
+    load_info = nothing
+
     if get(config, "load_models_from", "") != ""
         model_dir = config["load_models_from"]
         println("Loading initial models from directory: $model_dir")
-        load_models_into_hive!(hive, model_dir)
+
+        # Optional reproducible seed from config
+        rng =
+            haskey(config, "seed") ?
+            MersenneTwister(Int(config["seed"])) :
+            Random.default_rng()
+
+        load_info = load_models_into_hive!(hive, model_dir; rng=rng, shuffle_if_subset=true)
+
+        # You can keep this in memory for downstream logic and save it for stitching
+        println("Loaded bee mapping (hive -> source): ", load_info.hive_to_source_bee)
+    end
+
+    if load_info !== nothing
+        mapping_path = joinpath(output_dir, foldername, "loaded_bee_mapping.jdl2")
+        mkpath(dirname(mapping_path))
+        JLD2.@save mapping_path load_info
     end
     
     println("Starting simulation...")

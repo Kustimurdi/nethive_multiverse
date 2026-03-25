@@ -1,0 +1,252 @@
+```{julia}
+init_states = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_init/data/param_1_rep_1/states.csv", DataFrame)
+plastic_states = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b5t_plastic/data/param_19_rep_2/states.csv", DataFrame)
+```
+
+```{julia}
+"""
+    state_matrix(df, epoch; valuecol=:accuracies, fill=NaN)
+
+Return a (n_bees × n_tasks) Matrix of accuracies for the given epoch.
+Rows correspond to bee_id, columns to task_id.
+
+Also returns (bee_ids, task_ids) so you know the ordering.
+"""
+function state_matrix(df::DataFrame, epoch::Integer; valuecol::Symbol=:accuracies, fill=NaN)
+    sdf = @view df[df.epoch .== epoch, :]
+    isempty(sdf) && throw(ArgumentError("No rows found for epoch=$epoch"))
+
+    wide = unstack(DataFrame(sdf), :bee_id, :task_id, valuecol; fill=fill)
+
+    bee_ids = wide.bee_id
+    task_ids = names(wide)[2:end] .|> x -> parse(Int, String(x))  # columns are task_id values
+
+    mat = Matrix(select(wide, Not(:bee_id)))
+    return mat, bee_ids, task_ids
+end
+
+```
+
+```{julia}
+```
+
+```{julia}
+
+```
+
+```{julia}
+using Plots
+
+"""
+    plot_state_heatmaps(matsA, matsB, epochs; bee_ids=nothing, task_ids=nothing, clim=:auto)
+
+matsA/matsB: Dict(epoch => Matrix)
+epochs: vector like [0, 100, 500, 2000]
+
+Produces a 2×length(epochs) grid:
+- Row 1: dfA matrices
+- Row 2: dfB matrices
+"""
+function plot_state_heatmaps(matsA::Dict{Int,<:AbstractMatrix},
+                             matsB::Dict{Int,<:AbstractMatrix},
+                             epochs::AbstractVector{<:Integer};
+                             bee_ids=nothing,
+                             task_ids=nothing,
+                             clim=:auto)
+
+    ne = length(epochs)
+
+    # shared color limits (ignore NaNs)
+    if clim === :auto
+        vals = Float64[]
+        for e in epochs
+            append!(vals, vec(matsA[Int(e)]))
+            append!(vals, vec(matsB[Int(e)]))
+        end
+        vals = filter(!isnan, vals)
+        cmin, cmax = minimum(vals), maximum(vals)
+    else
+        cmin, cmax = clim
+    end
+
+    # axis ticks (optional)
+    xticks = task_ids === nothing ? :auto : (1:length(task_ids), string.(task_ids))
+    yticks = bee_ids  === nothing ? :auto : (1:length(bee_ids),  string.(bee_ids))
+
+    ps = Plot[]  # collect subplots
+
+    for (col, e_) in enumerate(epochs)
+        e = Int(e_)
+
+        p1 = heatmap(matsA[e];
+            title = "dfA · epoch $e",
+            xlabel = (col == ceil(Int, ne/2) ? "task_id" : ""),
+            ylabel = (col == 1 ? "bee_id" : ""),
+            aspect_ratio = 1,
+            clim = (cmin, cmax),
+            xticks = xticks,
+            yticks = yticks,
+            colorbar = (col == ne)  # show a colorbar only on last column
+        )
+
+        p2 = heatmap(matsB[e];
+            title = "dfB · epoch $e",
+            xlabel = (col == ceil(Int, ne/2) ? "task_id" : ""),
+            ylabel = (col == 1 ? "bee_id" : ""),
+            aspect_ratio = 1,
+            clim = (cmin, cmax),
+            xticks = xticks,
+            yticks = yticks,
+            colorbar = (col == ne)
+        )
+
+        push!(ps, p1, p2)
+    end
+
+    plot(ps...; layout=(2, ne), size=(350*ne, 700), margin=5Plots.mm)
+end
+```
+
+```{julia}
+epochs = [0, 100, 500, 2000]
+
+fig = plot_state_heatmaps_makie(mats_A_aligned, mats_B_aligned, epochs;
+                                bee_ids=bee_ids, task_ids=task_ids_aligned,
+                                row_titles=("DF1", "DF2"))
+
+save("state_heatmaps.png", fig)
+save("state_heatmaps.pdf", fig)
+
+```
+
+```{julia}
+epochs = [0, 100, 500, 2000]
+
+mats_A, bee_ids, task_ids = matrices_by_epoch(init_states, epochs)
+mats_B, bee_ids2, task_ids2 = matrices_by_epoch(plastic_states, epochs)
+```
+
+```{julia}
+# compute final-epoch matrices (using your Option A state_matrix)
+final_epoch = 2000
+matA_final, bee_ids, task_ids = state_matrix(init_states, final_epoch)
+matB_final, _, _ = state_matrix(plastic_states, final_epoch)
+
+# get permutation from dfA’s final state (or use dfB, or average them—your call)
+perm = task_permutation_greedy(matA_final)
+
+# reorder task_ids
+task_ids_aligned = task_ids[perm]
+
+# reorder all stored matrices (Dict(epoch => Matrix))
+
+mats_A_aligned = apply_col_permutation(mats_A, perm)
+mats_B_aligned = apply_col_permutation(mats_B, perm)
+
+```
+
+
+
+
+
+
+
+
+
+
+```{julia}
+times = [0, 100, 500, 2000]
+init_mats = []
+plastic_mats = []
+for (i, t) in enumerate(times)
+    init_mat = state_matrix(init_states, t)[1]
+    println(init_mat)
+    plastic_mat = state_matrix(plastic_states, t)[1]
+    append!(init_mats, init_mat)
+    append!(plastic_mats, plastic_mat)
+end
+```
+
+```{julia}
+tmin = minimum(init_states.)
+tmax = maximum(event_log.time)
+
+n_snaps = 6
+#t_snaps = collect(range(tmin, tmax; length=n_snaps))  # e.g. t0..tfinal
+t_snaps = [9000.0, 9400.0, 9500.0, 9600.0, 9700.0, 9800.0, 9900.0, 10000.0]
+```
+
+```{julia}
+fig = plot_acc_snapshots(event_log; t_snaps=t_snaps, nrows=2, ncols=4)
+fig
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "final_acc_heatmap_evo")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+batch_name = basename(dirname(dirname(run_path)))
+name = "heatmap_evo_$(batch_name)_$(basename(run_path))"
+name = string(name, "_failed")
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```
+
+
+
+
+
+
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/quarto_files/final_plots/code_for_plots/acc_heatmap_time_plasticity.jl")
+epochs = [0, 100, 500, 2000]
+final_epoch = epochs[end]
+dfA = init_states
+dfB = plastic_states
+```
+
+```{julia}
+mats_A, bee_ids, task_ids = matrices_by_epoch(dfA, epochs)
+mats_B, bee_ids2, task_ids2 = matrices_by_epoch(dfB, epochs)
+```
+
+```{julia}
+matA_final = mats_A[final_epoch]
+perm = task_permutation_greedy(matA_final)   # or greedy version
+
+task_ids_aligned = task_ids[perm]
+mats_A_aligned = apply_col_permutation(mats_A, perm)
+mats_B_aligned = apply_col_permutation(mats_B, perm)
+```
+
+```{julia}
+perm = [7,2,1,5,10,3,8,6,9,4]
+
+mats_A2 = permute_mats(mats_A, perm; axis=:rows)
+mats_B2 = permute_mats(mats_B, perm; axis=:rows)
+
+
+```
+
+```{julia}
+fig = plot_state_heatmaps(mats_A2, mats_B2, epochs)
+#fig = plot_state_heatmaps_makie(mats_A, mats_B, epochs)
+#save("state_heatmaps.png", fig)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "plasticity_evo")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+#batch_name = basename(dirname(dirname(run_path)))
+name = "plasticity_evo_10b5t_to_10b10t_p19r2_clean"
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```

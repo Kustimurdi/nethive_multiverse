@@ -1,0 +1,135 @@
+```{julia}
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_heaviside"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t_heaviside2"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/3b3t/3b3t_heaviside/"
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+
+```{julia}
+println("master df unique agent number: ",        unique(master_df.n_bees))
+println("master df unique task number: ",         unique(master_df.n_tasks))
+println("master df unique learning rates: ",      unique(master_df.learning_rate))
+println("master df unique interaction rates: ",   unique(master_df.interaction_rate))
+println("master df unique dead time: ",           unique(master_df.dead_time))
+println("master df unique sigmoid sensitivity: ", unique(master_df.lambda_sensitivity))
+```
+
+```{julia}
+ss = subset(
+    master_df,
+    #:lambda_sensitivity => ByRow(x -> x == 1),
+    :interaction_rate => ByRow(x -> x == 1000),
+    :dead_time => ByRow(x -> x == 0.1),
+    #:n_tasks => ByRow(x -> x == 10),
+    #:n_bees => ByRow(x -> x == 10),
+    #:n_tasks => ByRow(x -> x == 15),
+    #:n_bees => ByRow(x -> x == 9)
+)
+```
+
+```{julia}
+run_path = ss.run_path[2] 
+df = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+sdf = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
+config = load_config(joinpath(run_path, "config.json"))
+```
+
+```{julia}
+using Statistics
+
+active_fraction(sdf) = mean(.!sdf.suppressed)  # scalar in [0,1]
+suppressed_fraction(sdf) = mean(sdf.suppressed) # also useful
+
+using DataFrames, Statistics
+
+function active_fraction_by_epoch(sdf::DataFrame)
+    combine(groupby(sdf, :epoch),
+        :suppressed => (x -> mean(.!x)) => :active_frac,
+        :suppressed => mean => :suppressed_frac,
+        nrow => :n_rows,
+    )
+end
+
+function active_fraction_by_bee(sdf::DataFrame)
+    combine(groupby(sdf, :bee_id),
+        :suppressed => (x -> mean(.!x)) => :active_frac,
+        :suppressed => mean => :suppressed_frac,
+    )
+end
+
+function summarize_suppression(sdf::DataFrame)
+    (
+      active = mean(.!sdf.suppressed),
+      suppressed = mean(sdf.suppressed),
+      active_by_epoch = active_fraction_by_epoch(sdf),
+      active_by_bee = active_fraction_by_bee(sdf),
+    )
+end
+```
+
+```{julia}
+using DataFrames, Statistics
+
+# overall active fraction (you already did)
+active_fraction(sdf) = mean(.!sdf.suppressed)
+
+# per-agent active fraction averaged over tasks and time
+function active_fraction_by_bee(sdf::DataFrame)
+    combine(groupby(sdf, [:bee_id, :epoch]),
+        :suppressed => (x -> mean(.!x)) => :active_frac_epoch
+    ) |>
+    df -> combine(groupby(df, :bee_id),
+        :active_frac_epoch => mean => :active_frac
+    )
+end
+
+# fraction of "dead" agents: active fraction below eps
+function dead_agent_fraction(sdf::DataFrame; eps=0.05)
+    b = active_fraction_by_bee(sdf)
+    mean(b.active_frac .< eps), b
+end
+```
+
+```{julia}
+summary = summarize_suppression(sdf)
+println("Overall active fraction: ", summary.active)
+println("Overall suppressed fraction: ", summary.suppressed)
+println("alpha: ", config.interaction_rate)
+println("tau: ", config.dead_time)
+#summary.active_by_epoch
+#summary.suppressed
+dead_frac, b = dead_agent_fraction(sdf)
+println("Fraction of dead agents: ", dead_frac)
+```
+
+```{julia}
+ss = subset(
+    df,
+    :epoch => ByRow(x -> x == 10000),
+)
+```
+```{julia}
+for t in 1:config.n_tasks[1]
+    max_acc = maximum(ss.accuracies[ss.task_id .== t])
+    println("task $t, best acc: ", max_acc)
+end
+```
+
+```{julia}
+agg_path = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/agg_steffen_scores_10b10t_heaviside_2026-02-18.csv"
+CSV.read(agg_path, DataFrame)
+```
+
+```{julia}
+ss_agg = subset(
+    CSV.read(agg_path, DataFrame),
+    :interaction_rate => ByRow(x -> x == 500),
+    :dead_time => ByRow(x -> x == 1000),
+)
+println("alpha: ", ss_agg.interaction_rate[1])
+println("tau: ", ss_agg.dead_time[1])
+println("any ratio mean: ", ss_agg.any_ratio_mean[1])
+println("any ratio std: ", ss_agg.any_ratio_std[1])
+```

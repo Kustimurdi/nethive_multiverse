@@ -1,0 +1,86 @@
+```{julia}
+using StatsBase
+using CairoMakie
+
+# ---- paste your recovery times here ----
+add_times = [
+    405, 414, 452, 524, 371, 189, 574, 416, 402, 421,
+    301, 420, 305, 411, 349, 306, 288, 642, 606, 388,
+    394, 442, 493, 351, 385, 303, 330, 655, 357, 460
+]
+
+rem_times = [
+    371, 0, 833, 286, 535, 443, 530, 951, 443, 458,
+    788, 460, 500, 573, 317, 393, 399, 476, 485, 427,
+    419, 0, 371, 519, 429, 2263, 0, 387, 390, 436
+]
+
+# ---- ECDF helper: returns x,y step-curve coordinates ----
+function ecdf_step_coords(data::AbstractVector{<:Real})
+    xs = sort(collect(data))
+    n  = length(xs)
+    ys = (1:n) ./ n
+    # Step plot points: (x0,0)->(x1,0)->(x1,y1)->(x2,y1)->...
+    xstep = vcat(xs[1], repeat(xs, inner=2))
+    ystep = vcat(0.0, repeat(ys, inner=2)[1:end-1])
+    return xstep, ystep
+end
+function ecdf_step_coords(data::AbstractVector{<:Real})
+    xs = sort(collect(data))
+    n  = length(xs)
+    ys = (1:n) ./ n
+
+    xstep = vcat(xs[1], repeat(xs, inner=2))       # length 1 + 2n
+    ystep = vcat(0.0, repeat(ys, inner=2))         # length 1 + 2n
+
+    return xstep, ystep
+end
+```
+
+```{julia}
+labelsize = 24
+ticksize = 20
+x_add, y_add = ecdf_step_coords(add_times)
+x_rem, y_rem = ecdf_step_coords(rem_times)
+
+fig = Figure(size=(800, 450))
+ax = Axis(fig[1, 1],
+    xlabel = "Recovery time Δt_rec (epochs)",
+    ylabel = "Fraction recovered",
+    #title  = "ECDF of re-specialization times",
+    xgridvisible=true, ygridvisible=true,
+    xlabelsize=labelsize,
+    ylabelsize=labelsize,
+    xticklabelsize=ticksize,
+    yticklabelsize=ticksize,
+)
+
+@show length(x_add) length(y_add)
+lines!(ax, x_add, y_add, linewidth=3, label="Add 1 task")
+lines!(ax, x_rem, y_rem, linewidth=3, label="Remove 1 agent")
+
+# Optional: show the horizon you simulated
+vlines!(ax, [5000], linestyle=:dash, linewidth=2)
+
+axislegend(ax, position=:rb, labelsize=ticksize)
+
+# Optional: tighten y-limits
+ylims!(ax, 0, 1.02)
+```
+
+```{julia}
+display(fig)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "ecdf_plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "ecdf_recovery_times_add_rem_$(labelsize)_$(ticksize)_$(Dates.format(Dates.now(), "yyyy-mm-dd_HHMM"))"
+outfile_png = joinpath(save_path, "$descriptor.png")
+outfile_pdf = joinpath(save_path, "$descriptor.pdf")
+save(outfile_png, fig)
+save(outfile_pdf, fig)
+```

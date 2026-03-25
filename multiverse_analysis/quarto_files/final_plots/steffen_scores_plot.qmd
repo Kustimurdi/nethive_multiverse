@@ -1,0 +1,319 @@
+# original 2b2t heatmap lr 5e-5
+```{julia}
+st1 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_wout_og_2026-01-21_1934.csv", DataFrame)
+st2 = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_og_vals_2026-01-27_1611.csv", DataFrame)
+select!(st2, Not(:n_epochs, :avg_agents_geq_per_task))
+st = vcat(st1, st2)
+```
+
+# 2b2t heatmap lr 5e-6
+
+```{julia}
+st1 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/analysis/steffen_scores_2b2t_5-6lr_2026-01-27_1349.csv", DataFrame)
+st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t5-6lr_missing_runs/steffen_scores_2b2t5-6lr_missing_runs_full_2026-02-10_1113.csv", DataFrame)
+
+st1_filtered = subset(
+    st1,
+    [:interaction_rate, :dead_time] => ByRow((ir, dt) -> !(ir < 0.06 && dt < 600)),
+)
+
+st2 = subset(
+    st2, 
+    #:learning_rate => ByRow(==(lr))
+    :interaction_rate => ByRow(<=(0.05)),
+)
+
+st2_1 = subset(
+    st2,
+    :dead_time => ByRow(==(0.07)),
+    :interaction_rate => ByRow(==(0.03))
+)
+st2_2 = subset(
+    st2,
+    :dead_time => ByRow(==(10.0)),
+    :interaction_rate => ByRow(==(0.05))
+)
+st2_3 = subset(
+    st2,
+    :dead_time => ByRow(==(50.0)),
+    :interaction_rate => ByRow(==(0.01))
+)
+st2_4 = subset(
+    st2,
+    :dead_time => ByRow(==(300.0)),
+    :interaction_rate => ByRow(==(0.01))
+)
+
+st = vcat(st1, st2_1, st2_2, st2_3, st2_4)
+```
+
+# 3b3t heaviside heatmap
+
+```{julia}
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_heaviside/steffen_scores_3b3t_heaviside_2026-02-23_1207.csv", DataFrame)
+```
+
+# 5b5t heaviside heatmap lr 5e-6
+
+```{julia}
+st1 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_heaviside/steffen_scores_5b5t_heaviside_2026-02-20_1555.csv", DataFrame)
+st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/5b5t_heaviside/steffen_scores_5b5t_heaviside_2_3_2026-02-24_1523.csv", DataFrame)
+st = vcat(st1, st2)
+```
+
+
+# 10b10 heatmap lr barebone
+
+```{julia}
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t15c10000e5-6lr100ls_high_dt/steffen_scores_10b10t15c10000e5-6lr100ls_high_dt_2026-02-02_1425.csv", DataFrame)
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t5-6lr_barebone/steffen_scores_10b10t_barbone_2026-02-18_1701.csv", DataFrame)
+```
+
+# 10b10t heatmap lr 5e-6
+
+```{julia}
+st1 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/steffen_scores_10b10t_heaviside_1_2_2026-02-14_1921.csv", DataFrame)
+st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/steffen_scores_10b10t_heaviside_3_2026-02-15_1110.csv", DataFrame)
+st3 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/steffen_scores_10b10t_heaviside_4_2026-02-17_1050.csv", DataFrame)
+st4 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/steffen_scores_10b10t_heaviside_5_6_2026-02-18_1111.csv", DataFrame)
+st5 = vcat(st1, st2, st3, st4)
+st = st5
+```
+
+```{julia}
+st4_ss = subset(
+    st4,
+    :threshold => ByRow(==(0.9)),
+    :interaction_rate => ByRow(==(0.3)),
+    #:interaction_rate => ByRow(x -> (x == 0.3 || x == 0.4 || x == 0.5 || x == 0.6 || x == 0.7 || x == 0.8 || x == 0.9)),
+    #:dead_time => ByRow(==(0.1))
+)
+```
+
+```{julia}
+for i in unique(sort(st4_ss.dead_time))
+    println("dead time: ", i)
+end
+```
+
+# other datasets
+```{julia}
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_5b5t_eta_sweep_2026-01-25_1729.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t5-6lr_2026-01-25_1739.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_3b3t_car_iris_wine_2026-01-26_1909.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_scores_2b2t_5-6lr_2026-01-27_1349.csv", DataFrame)
+#st = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out_steffen_short/steffen_scores_short_2b2t_lr5-5_2026-01-27_1528.csv", DataFrame)
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/steffen_scores_car_bank_wdbc_2026-01-28_1816.csv", DataFrame)
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t100ls/steffen_scores_10b10t_100ls_2026-02-19_1200.csv", DataFrame)
+```
+
+```{julia}
+th = 0.9
+ls = 100
+lrs = unique(st.learning_rate)
+lr = lrs[1]
+#lr = 0.00001
+#lr = 0.00005
+#lr = 0.000005
+df_sel = subset(
+    st, 
+    :threshold => ByRow(==(th)),
+    #:learning_rate => ByRow(==(lr))
+    #:lambda_sensitivity => ByRow(==(ls)),
+    #:interaction_rate => ByRow(>=(0.1)),
+    #:dead_time => ByRow(>=(0.1))
+)
+```
+
+```{julia}
+df_last = combine(groupby(df_sel, :param_dir)) do sdf
+    sdf[argmax(sdf.time), :]
+end
+```
+
+```{julia}
+df_last.n_bees .= df_last.n_agents
+```
+
+```{julia}
+#df_sel.any_ratio = df_sel.any_geq ./ df_sel.n_bees #df_sel.exactly_ratio = df_sel.exactly_one_geq ./ df_sel.n_bees
+#df_sel.unique_ratio = df_sel.unique_specialist ./ df_sel.n_bees
+df_last.any_ratio = df_last.any_geq ./ df_last.n_bees
+df_last.exactly_ratio = df_last.exactly_one_geq ./ df_last.n_bees
+df_last.unique_ratio = df_last.unique_specialist ./ df_last.n_bees
+df_last.any_exactly_diff = df_last.any_ratio - df_last.exactly_ratio
+df_last.exactly_unique_diff = df_last.exactly_ratio - df_last.unique_ratio
+```
+
+```{julia}
+agg = combine(
+    groupby(df_last, [:interaction_rate, :dead_time]),
+    :unique_ratio => mean => :unique_ratio_mean,
+    :unique_ratio => std  => :unique_ratio_std,
+    :exactly_ratio => mean => :exactly_ratio_mean,
+    :exactly_ratio => std  => :exactly_ratio_std,
+    :any_ratio => mean => :any_ratio_mean,
+    :any_ratio => std  => :any_ratio_std,
+    :avg_agents_geq_per_task => mean => :avg_agents_mean,
+    :avg_agents_geq_per_task => std  => :avg_agents_std,
+    :any_exactly_diff => mean => :any_exactly_diff_mean,
+    :any_exactly_diff => std  => :any_exactly_diff_std,
+    :exactly_unique_diff => mean => :exactly_unique_diff_mean,
+    :exactly_unique_diff => std  => :exactly_unique_diff_std,
+    nrow => :n_rows,   # how many samples contributed (often = #runs, if 1 row per run per time)
+    :param_dir => (x -> length(unique(x))) => :n_runs
+)
+```
+
+```{julia}
+test = subset(
+    agg,
+    :interaction_rate => ByRow(x -> x == 0.1),
+    :n_rows => ByRow(x -> x < 5)
+    #:dead_time => ByRow(x -> x == 0.07)
+)
+```
+
+```{julia}
+for i in unique(sort(test.n_rows))
+    println("n_rows: ", i)
+end
+```
+
+```{julia}
+xcol = :interaction_rate
+ycol = :dead_time
+valcol = :unique_ratio_mean
+valcol = :unique_ratio_std
+valcol = :avg_agents_mean
+valcol = :avg_agents_std
+valcol = :any_ratio_mean
+valcol = :any_ratio_std
+valcol = :exactly_ratio_mean
+#valcol = :exactly_ratio_std
+#valcol = :any_exactly_diff_mean
+#valcol = :any_exactly_diff_std
+#valcol = :exactly_unique_diff_mean
+#valcol = :exactly_unique_diff_std
+#valcol = :n_rows
+
+xs = sort(unique(agg[:, xcol]))
+ys = sort(unique(agg[:, ycol]))
+xi = Dict(v => i for (i,v) in enumerate(xs))
+yi = Dict(v => i for (i,v) in enumerate(ys))
+
+# NOTE: rows = x, cols = y
+#mat = fill(NaN, length(xs), length(ys))
+#for r in eachrow(agg)
+    #mat[xi[r[xcol]], yi[r[ycol]]] = r[valcol]
+#end
+
+# NOTE: rows = y, cols = x
+mat = fill(NaN, length(ys), length(xs))
+for r in eachrow(agg)
+    mat[yi[r[ycol]], xi[r[xcol]]] = r[valcol]
+end
+
+#mat = mat'
+```
+
+```{julia}
+title = "2b2t15c: $(string(valcol))"
+heat_fig = Figure(size=(800,600))
+labelsize = 32
+ticklabelsize = 28
+ax = Axis(heat_fig[1,1], 
+            xlabel = L"\text{refractory period } \tau", 
+            ylabel = L"\text{interaction rate prefactor } \alpha",
+            xlabelsize = labelsize,
+            ylabelsize = labelsize,
+            xticklabelsize = ticklabelsize,
+            yticklabelsize = ticklabelsize)
+            #title=title)
+#ax = Axis(heat_fig[1,1], xlabel = "dead time r"$t_d$"", ylabel = "interaction rate r"$\alpha$"", title=title)
+
+# draw on integer grid and keep the mapping via tick labels
+# plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
+powers = 10.0 .^(-2:3)
+powers = round.(powers, digits=5)
+xtick_vals = intersect(xs, powers)
+ytick_vals = intersect(ys, powers)
+xtick_pos = [xi[v] for v in xtick_vals] 
+ytick_pos = [yi[v] for v in ytick_vals] 
+#ticks = [L"10^{-2}", L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
+ticks = [L"10^{-1}", L"10^{0}", L"10^{1}", L"10^{2}", L"10^{3}"]
+ax.xticks = (xtick_pos, string.(xtick_vals))
+ax.yticks = (ytick_pos, string.(ytick_vals))
+#ax.xticks = (xtick_pos, ticks)
+#ax.yticks = (ytick_pos, ticks)
+cb = Colorbar(heat_fig[1,2], 
+        hm,
+        #label = L"\text{Average of the highest Accuracies}", #IMPORTANT: check if it corresponds to the depicted value
+        #label = L"\text{Average of the Coverage Fraction}",
+        #label = L"\text{Standard deviation of the highest Accuracy}",
+        #label = L"\text{Standard deviation of the Coverage Fraction}",
+        #label = "$(valcol)",
+        labelsize = labelsize,
+        ticklabelsize = ticklabelsize)
+#cb.ticks = ([0.85, 0.90, 0.95], [L"0.85", L"0.90", L"0.95"]) #mean coverage
+#cb.ticks = ([0.6, 0.7, 0.8, 0.9, 1.0], [L"0.6", L"0.7", L"0.8", L"0.9", L"1.0"]) #mean accuracy
+#cb.ticks = ([0.0, 0.1, 0.2, 0.3, 0.4], [L"0.0", L"0.1", L"0.2", L"0.3", L"0.4"]) #std accuracy
+#cb.ticks = ([0.0, 0.1, 0.2, 0.3], [L"0.0", L"0.1", L"0.2", L"0.3"]) #std coverage
+#cb.ticks = ([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [L"0.0", L"0.2", L"0.4", L"0.6", L"0.8", L"1.0"]) 
+#cb.ticks = ([0.0, 0.5, 1.0], [L"0.0", L"0.5", L"1.0"]) #mean coverage
+```
+
+```{julia}
+display(heat_fig)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "3b3t5-6_data_heatmap")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "$(valcol)"
+#lr = st.learning_rate[1]
+name = "3b3t_$(lr)_ls_$(ls)_th_$(th)_$(string(valcol))_$(Dates.format(now(), "yyyy-mm-dd_HHMM"))"
+save(joinpath(save_path, "$(name).pdf"), heat_fig)
+save(joinpath(save_path, "$(name).png"), heat_fig)
+```
+
+```{julia}
+inspect = subset(
+    st, 
+    :threshold => ByRow(==(th)),
+    :interaction_rate => ByRow(in([500])),
+    :dead_time => ByRow(x -> x < 1.0))
+```
+
+```{julia}
+roots = unique(inspect.root)
+for i in 1:length(roots)
+    println(roots[i])
+end
+```
+
+```{julia}
+ex = subset(
+    st,
+    :threshold => ByRow(==(th)),
+    :dead_time => ByRow(x -> x < 1.0),
+    :interaction_rate => ByRow(==(100))
+)
+println(unique(ex.root)[1])
+```
+
+```{julia}
+df_sub = subset(
+    st2, 
+    :threshold => ByRow(==(th)),
+    #:learning_rate => ByRow(==(lr))
+    :lambda_sensitivity => ByRow(==(ls)),
+    :interaction_rate => ByRow(==(0.01)),
+    :dead_time => ByRow(==(50.0))
+)
+```

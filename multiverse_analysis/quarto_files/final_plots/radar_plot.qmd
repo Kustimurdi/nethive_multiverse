@@ -1,0 +1,271 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/quarto_files/final_plots/radar_plot_code.jl")
+```
+
+```{julia}
+# 5b5t
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep"
+# 10b15t
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b15t/"
+# 30b30t
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t50dt50int_cont1/"
+# 10b10t
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t_heaviside2"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t1000it1000dt_eta_sweep/"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b10t_eta_sweep_low"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/10b15t/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/20b20t/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t_smol_sweep_init"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t_plastic_sweep"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t100dt500int_init_sweep"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/plasticity/20b10t/20b10t_init/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/plasticity/20b10t/20b10t_plastic/"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/20b10t_plastic_agent_removal/" #run 2
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t_init_sweep"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t100dt200int_plastic4"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t0p5dt_init_sweep"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t6000e_cont_init_sweep_p2r4" #not work, add: p2r3, r4
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t5dt_init_sweep2" #works:1, 
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_init2/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_init"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t_random_loading_test"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_load_tasks_check/"
+#folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_remove_agent_5000e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_heaviside"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t_heaviside4"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/heaviside_sweep/5b5t_heaviside3"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_add_task_5000e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_init_2000e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_remove_agent_init2000e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_add_task_init2000e"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t1000alpha_init"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15-10size_test"
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/agent_task_sweep1" #3 works
+
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+println("master df unique agent number: ",        unique(master_df.n_bees))
+println("master df unique task number: ",         unique(master_df.n_tasks))
+println("master df unique learning rates: ",      unique(master_df.learning_rate))
+println("master df unique interaction rates: ",   unique(master_df.interaction_rate))
+println("master df unique dead time: ",           unique(master_df.dead_time))
+println("master df unique sigmoid sensitivity: ", unique(master_df.lambda_sensitivity))
+println("master df number of epochs: ",           unique(master_df.n_epochs))
+```
+
+```{julia}
+ss = subset(
+    master_df,
+    #:lambda_sensitivity => ByRow(x -> x == 1),
+    :interaction_rate => ByRow(x -> x == 1000),
+    #:dead_time => ByRow(x -> x == 1),
+    #:n_epochs => ByRow(x -> x == 3000),
+    #:n_tasks => ByRow(x -> x == 10),
+    :n_bees => ByRow(x -> x == 15),
+    :n_tasks => ByRow(x -> x == 10),
+    #:n_bees => ByRow(x -> x == 9)
+)
+```
+
+```{julia}
+run_path = ss.run_path[3] #1, 5, 8; 200: 3, 4, 5, 7, 8; 100:2, 5, 8, 10
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_remove_agent_init2000e/data/param_1_rep_6"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t100dt100int_cont1/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t_high/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t100dt100int_cont1/data/param_1_rep_1/"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t200dt500int_cont1/data/param_1_rep_1"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15b10t_init/data/param_1_rep_1/"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/30b30t200dt500int_cont2/data/param_1_rep_1"
+states = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+activity = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
+config = load_config(joinpath(run_path, "config.json"))
+#df = subset(
+    #df,
+    #:epoch => ByRow(x -> x == 0)
+#)
+```
+
+
+# beginning of radar plot code
+
+```{julia}
+order = nothing
+M = maximum(states.task_id)
+bee_rank = nothing
+```
+
+```{julia}
+points, verts = embed_specialization(states; task_order=order, M=M) 
+
+#length(order))
+```
+
+```{julia}
+fig = Figure(size=(800, 800))
+ax = Axis(fig[1, 1], aspect=DataAspect(), title="", titlealign=:center)
+draw_radar_canvas!(ax, verts; rings=4, order=order)
+```
+
+```{julia}
+#ts = :none
+ts = :fade_fast
+plot_specialization!(ax, points, trail_step=10000, alpha_range=(0.3, 0.5), trail_lw=3.0, marker_size=7.0, trail_style=ts, bee_order=bee_rank)
+```
+
+```{julia}
+display(fig)
+```
+
+```{julia}
+save_dir_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(save_dir_path, "system_size_comparison")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+runname = basename(run_path)
+foldername = basename(dirname(dirname(run_path)))
+timestamp = Dates.format(now(), "yyyy-mm-dd_HHMM")
+lr = config.learning_rate[1]
+ir = config.interaction_rate[1]
+dt = config.dead_time[1]
+ls = config.lambda_sensitivity[1]
+nA = config.n_bees[1]
+nT = config.n_tasks[1]
+descriptor = "lr_$(lr)_ir_$(ir)_dt_$(dt)_ls_$(ls)_nA_$(nA)_nT_$(nT)"
+runname = basename(run_path)
+foldername = basename(dirname(dirname(run_path)))
+name = "radar_$(foldername)_$(runname)_$(descriptor)_$(timestamp)_$(ts)"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```
+
+
+```{julia}
+ss = subset(
+    states,
+    :epoch => ByRow(x -> x == 2000),
+    #:bee_id => ByRow(x -> x == 3)
+    :task_id => ByRow(x -> x == 8)
+)
+
+```
+
+
+
+
+# wrong code, ignore
+
+```{julia}
+plt =
+    data(points) *
+    mapping(:x, :y, color=:epoch, group=:bee_id) *
+    (visual(Lines, linewidth=1) + visual(Scatter, markersize=6))
+
+fig = Figure(size=(800, 800))
+ax = Axis(fig[1, 1], aspect=DataAspect(), title="Specialization embedding", titlealign=:center)
+fg = draw!(ax, plt)
+
+# Add task polygon + labels (Makie annotation; AoG doesn't mind)
+xs = [v[1] for v in verts]
+ys = [v[2] for v in verts]
+push!(xs, verts[1][1])
+push!(ys, verts[1][2])
+lines!(ax, xs, ys, linewidth=1)
+#poly = [Point2f(x, y) for (x, y) in zip(xs, ys)]
+#push!(poly, poly[1])
+scatter!(ax, xs[1:end-1], ys[1:end-1], color=:black, markersize=14)
+for (i, v) in enumerate(verts)
+    text!(ax, "T$i", position=v * 1.08, align=(:center, :center))
+end
+hidedecorations!(ax)
+hidespines!(ax)
+
+xlims!(ax, -1.2, 1.2)
+ylims!(ax, -1.2, 1.2)
+
+# add radial spokes
+
+t = range(0, 2π; length=361)
+#lines!(ax, cos.(t), sin.(t), linewidth=1)   # unit circle
+
+# spokes to task vertices
+for v in verts
+    lines!(ax, [0, v[1]], [0, v[2]], linewidth=0.5)
+end
+```
+
+```{julia}
+display(fig)
+```
+
+```{julia}
+activity = CSV.read(joinpath(run_path, "activity.csv"), DataFrame)
+```
+
+```{julia}
+beeid = 2   
+taskid = 7
+ss_act = subset(
+    activity,
+    :task_id => ByRow(x -> x == taskid),
+    :bee_id => ByRow(x -> x == beeid),
+    :epoch => ByRow(x -> x >= 5000)
+)
+
+ss_states = subset(
+    df,
+    :task_id => ByRow(x -> x == taskid),
+    :bee_id => ByRow(x -> x == beeid),
+    :epoch => ByRow(x -> x >= 5000)
+)
+```
+
+```{julia}
+n_active = sum(ss_act.suppressed .== false)
+```
+
+```{julia}
+max_epoch = maximum(states.epoch)
+ss2 = subset(
+    states,
+    #:epoch => ByRow(x -> x == max_epoch),
+    :epoch => ByRow(x -> x == 1000),
+    #:epoch => ByRow(x -> x == 0),
+    #:bee_id => ByRow(x -> x == 3)
+    #:task_id => ByRow(x -> x == 27),
+    #:accuracies => ByRow(x -> x > 0.5)
+)
+```
+
+```{julia}
+for t in 1:config.n_tasks[1]
+    max_acc = maximum(ss2.accuracies[ss2.task_id .== t])
+    println("task $t, best acc: ", max_acc)
+end
+```
+
+```{julia}
+for t in 1:config.n_tasks[1]
+    max_acc = maximum(ss2.accuracies[ss2.task_id .== t])
+    idx = findall((ss2.accuracies .== max_acc) .& (ss2.task_id .== t))
+    println("full row of task $t with max acc: ", ss2[idx, :])
+    #println("task $t, best acc: ", maximum(ss2.accuracies[ss2.task_id .== t]))
+    #println("agent with highest acc: ", ss2.bee_id[ss2.accuracies .== max_acc][1])
+    println("-----")
+end
+```
+
+```{julia}
+for t in 1:config.n_bees[1]
+    println("bee $t, max acc: ", maximum(ss2.accuracies[ss2.bee_id .== t]))
+end
+```
+
+```{julia}
+bee_rank = rank_bees(points)
+```

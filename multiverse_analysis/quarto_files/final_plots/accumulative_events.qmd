@@ -1,0 +1,32 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/plots/cum.jl")
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/2b2t15c10000e10+dt90+int/data/param_85_rep_6"
+elog = load_log(run_path)
+```
+
+```{julia}
+events = select(elog, :time, :bee1_id, :bee2_id, :task_id)
+filter!(row -> row.task_id != 0, events)
+events.kind = ifelse.(events.bee1_id .== events.bee2_id, "train", "suppress")
+# the "affected agent" for the event (for training it's the trainee; for suppression it's who gets suppressed)
+events.agent = events.bee1_id
+```
+
+```{julia}
+curves = cum_curves_union_times(events)
+fig = plot_cum_events_per_task_union(curves; ncols=3)
+fig
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "mean_dt")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+batch_name = basename(dirname(dirname(run_path)))
+name = "mean_dt_$(batch_name)_$(basename(run_path))"
+#name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```

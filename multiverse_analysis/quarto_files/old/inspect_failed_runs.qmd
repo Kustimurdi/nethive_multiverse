@@ -1,0 +1,40 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/analyse.jl")
+#using GLMakie
+using Statistics
+using CairoMakie
+```
+
+# Get unique sorted axis values
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_adding_second_gene_replicate_sweep/"
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_stand_prefactor_standard_heaviside_arg"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_2_tasks_2_bees_adding_2nd_qg_sweep"
+data_path = joinpath(folder_path, "data")
+
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+runs = load_runs(master_df.run_path)
+actual_full_results = analyze_runs(runs)
+```
+
+# Expect the runs that have NaN values (maybe sollte ich darauf ein eigenes File machen)
+
+```{julia}
+failed_runs = filter(row -> ismissing(row.score_n1) || ismissing(row.score_n2) ||
+                            isnan(row.score_n1) || isnan(row.score_n2), actual_full_results)
+```
+
+```{julia}
+example_run_path = failed_runs.run_path[1]
+run_data = load_run(example_run_path)
+states = run_data.states
+analysis_data = analyze_run(states)
+```
+
+```{julia}
+t_states = states[states.time .== 60.0, :]
+```

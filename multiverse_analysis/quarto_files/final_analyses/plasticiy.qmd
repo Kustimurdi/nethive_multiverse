@@ -1,0 +1,49 @@
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_init2/data/param_8_rep_1"
+# runpath for alpha=1000 and tau=1: /project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_init_2000e/data/param_1_rep_1
+
+```{julia}
+#path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_remove_agent_5000e"
+#df = CSV.read(joinpath(path, "steffen_scores_11b10t_remove_agent_5000e_2026-03-04_1018.csv"), DataFrame)
+path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_remove_agent_init2000e"
+file = "steffen_scores_11b10t_remove_agent_init2000e_2026-03-04_2128.csv"
+df = CSV.read(joinpath(path, file), DataFrame)
+```
+
+```{julia}
+#path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_add_task_5000e"
+path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/11b10t_add_task_init2000e"
+file = "steffen_scores_11b10t_add_task_init2000e_2026-03-05_1018.csv"
+df = CSV.read(joinpath(path, file), DataFrame)
+```
+
+```{julia}
+sdf = subset(
+    df,
+    :threshold => ByRow(x -> x == 0.9),
+    :time => ByRow(x -> x == 5000),
+    #:any_geq => ByRow(x -> x == 6)
+    #:t_any_geq_q0_8 => ByRow(x -> x == 0)
+)
+```
+
+```{julia}
+any(ismissing, sdf.t_any_geq_q0_9)
+```
+
+```{julia}
+cols = (
+    sdf.t_any_geq_q0_9,
+    sdf.t_exactly_one_geq_q0_9,
+    sdf.t_unique_specialist_q0_9
+)
+
+# `isequal` handles missing values safely (missing == missing -> true here)
+all_coincide = all(isequal.(cols[1], cols[2]) .& isequal.(cols[1], cols[3]))
+println(all_coincide)
+```
+
+```{julia}
+for t in sdf.t_any_geq_q0_9
+    println(t)
+end
+```

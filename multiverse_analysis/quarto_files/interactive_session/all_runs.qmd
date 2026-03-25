@@ -1,0 +1,124 @@
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/save_model_run"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/2b2t15c1000e_lr5"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/check_loading/bt_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e_doch_kuezer"
+```
+
+```{julia}
+summaries = CSV.read(joinpath(folder_path, "summaries.csv"), DataFrame)
+```
+
+```{julia}
+folder_path_2 = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/10b10t15c1000e_logsweep_2"
+summaries_2 = CSV.read(joinpath(folder_path_2, "summaries.csv"), DataFrame)
+```
+```{julia}
+summaries_3 = vcat(summaries, summaries_2)
+summaries = summaries_3
+```
+```{julia} 
+master_df = build_master_dataframe(joinpath(folder_path, "data"))
+```
+
+```{julia}
+f_sum = copy(summaries)
+```
+
+# filtering the data
+
+```{julia}
+filter_1 = :lambda_sensitivity
+filter_1_val = 100
+filter_2 = :learning_rate
+filter_2_val = 1.0e-5
+filter_2_val = 5.0e-5
+f_sum = filter(row -> row[filter_1] == filter_1_val, f_sum)
+f_sum = filter(row -> row[filter_2] == filter_2_val, f_sum)
+#f_sum = filter(row -> row.lambda_sensitivity == 100, f_sum)
+#f_sum = filter(row -> row.learning_rate == 5.0e-5, f_sum)
+#f_sum = filter(row -> row.dead_time == 5.0, f_sum)
+```
+
+# aggregating the data
+
+```{julia}
+#xcol = "dead_time"
+#ycol = "interaction_rate"
+xcol = "n_bees"
+ycol = "n_tasks"
+metric_col = :coverage_fraction
+groupcols = [Symbol(xcol), Symbol(ycol)]
+agg = combine(groupby(f_sum, groupcols),
+              metric_col => mean => :mean_coverage,
+              metric_col => std  => :std_coverage,
+              metric_col => length => :coverage_count,
+              :p_end_mean => mean => :mean_score)
+
+sort!(agg, groupcols)
+```
+
+# prepare data for the heatmap
+
+```{julia}
+xcol = Symbol(xcol)
+ycol = Symbol(ycol)
+valcol = :mean_coverage
+#valcol = :mean_score
+
+xs = sort(unique(agg[:, xcol]))
+ys = sort(unique(agg[:, ycol]))
+xi = Dict(v => i for (i,v) in enumerate(xs))
+yi = Dict(v => i for (i,v) in enumerate(ys))
+
+mat = fill(NaN, length(xs), length(ys))
+for r in eachrow(agg)
+    mat[xi[r[xcol]], yi[r[ycol]]] = r[valcol]
+end
+```
+
+```{julia}
+heat_fig = Figure(resolution=(800,600))
+ax = Axis(heat_fig[1,1], xlabel = string(xcol), ylabel = string(ycol), title="run $(basename(folder_path)): $(string(valcol))")
+
+# draw on integer grid and keep the mapping via tick labels
+# plot transposed matrix on x=1:length(xs), y=1:length(ys) so xticks->xs and yticks->ys
+hm = heatmap!(ax, 1:length(xs), 1:length(ys), mat; colormap = :viridis)
+ax.xticks = (1:length(xs), string.(xs))
+ax.yticks = (1:length(ys), string.(ys))
+
+Colorbar(heat_fig[1,2], hm)
+```
+
+```{julia}
+display(heat_fig)
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+name = "$(basename(folder_path))_$(string(valcol))_$(filter_1)_$(filter_1_val)_$(filter_2)_$(filter_2_val)"
+save(joinpath(save_path, "$(name).pdf"), heat_fig)
+save(joinpath(save_path, "$(name).png"), heat_fig)
+```
+
+# remnant
+```{julia}
+group = [:lambda_sensitivity, :learning_rate, :interaction_rate, :dead_time]
+g_sum = groupby(f_sum, group)
+```
+
+```{julia}
+c_sum = combine(g_sum, [:specialization_score_mean, :run_quality_score, :coverage_fraction, :p_end_mean] .=> mean; renamecols=false)
+```
+
+```{julia}
+fig = Figure(resolution=(800,600))
+ax = Axis(fig[1, 1], xlabel=string(ycol), ylabel=string(xcol))
+hm = heatmap!(ax, ys, xs, mat; colormap = :viridis)   # note: (x=cols, y=rows) -> ys, xs
+Colorbar(fig[1,2], hm)
+```
+
+```{julia}

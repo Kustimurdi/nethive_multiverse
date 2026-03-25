@@ -1,0 +1,221 @@
+```{julia}
+using Pkg
+#Pkg.activate("./env_nethive_multiverse/")
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/env_nethive_multiverse")
+#Pkg.instantiate()
+```
+
+```{julia}
+# Load packages directly (they should be available via JULIA_PROJECT)
+using ArgParse
+using CSV
+using DataFrames
+using Flux
+using JSON3
+using MLDatasets
+using LinearAlgebra
+using Random
+using Statistics
+using Dates
+```
+
+```{julia}
+# Load our modules
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/loaders.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/definitions.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/multitask_training.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/methods.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/save_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/synthetic.jl")
+```
+
+# testing standard datasets
+
+```{julia}
+#dataset = register_wdbc!()
+#dataset = register_bank!()
+#dataset = register_iris!()
+#dataset = register_car_eval!()
+#dataset = register_wineq_red!()
+#dataset = register_mnist!()
+#dataset = register_wineq_white!()
+#dataset = register_dropout!()
+trainl, testl = create_loaders(dataset)
+
+function create_loaders_direct(train_x, train_y, test_x, test_y; batch_size::Int=32, shuffle_train::Bool=true)
+    # Create proper Flux DataLoaders
+    train_loader = Flux.DataLoader(
+        (train_x, train_y), 
+        batchsize=batch_size, 
+        shuffle=shuffle_train
+    )
+    
+    test_loader = Flux.DataLoader(
+        (test_x, test_y), 
+        batchsize=batch_size, 
+        shuffle=false  # Don't shuffle test data
+    )
+    
+    return train_loader, test_loader
+end
+
+```
+
+```{julia}
+m = mean(dataset.train_data[1], dims=2)
+stand_dev = Statistics.std(dataset.train_data[1], dims=2)
+norm_dataset = deepcopy(dataset)
+z = (dataset.train_data[1] .- m) ./ stand_dev
+train_normed = (z, dataset.train_data[2])
+```
+
+```{julia}
+test = dataset.test_data[1]
+row_mean = mean(test, dims=2)
+row_std = std(test, dims=2)
+z = (test .- row_mean) ./ row_std
+test_normed = (z, dataset.test_data[2])
+```
+
+```{julia}
+train = dataset.train_data[1]
+test = dataset.test_data[1]
+row_min_train = minimum(train, dims=2)
+row_min_test = minimum(test, dims=2)
+row_max_train = maximum(train, dims=2)
+row_max_test = maximum(test, dims=2)
+
+scaled_train = (train .- row_min_train) ./ (row_max_train .- row_min_train)
+scaled_test = (test .- row_min_test) ./ (row_max_test .- row_min_test)
+
+train_normed = (scaled_train, dataset.train_data[2])
+test_normed = (scaled_test, dataset.test_data[2])
+```
+
+```{julia}
+trainl, testl = create_loaders_direct(train_normed[1], train_normed[2], test_normed[1], test_normed[2])
+```
+
+```{julia}
+model_template = create_universal_model_template(dataset.padded_input_dim, dataset.padded_output_dim)
+model = model_template()
+```
+
+# gaussian datasets
+
+```{julia}
+struct TaskConfig
+    n_classes::Int
+    features_dimension::Int
+    n_per_class_train::Int
+    n_per_class_test::Int
+    sampling_gauss_sigma::Float64
+    use_per_class_variance::Bool
+    variance_bounds::Tuple{Float64, Float64}
+    center_generation_bounds::Tuple{Float64, Float64}
+end
+
+conf = TaskConfig(3, 3, 500, 200, 0.0, true, (1.0, 3.0), (1.0, 4.0))
+dataset = create_dataset(conf)
+trainl, testl = create_gauss_loaders(dataset.train_data, dataset.test_data)
+```
+
+```{julia}
+model_template = create_gauss_model_template(conf)
+model = model_template()
+```
+
+```{julia}
+n_epochs = 100
+lr = 0.00001
+nbatches = 100
+init_acc = calc_classification_accuracy(model, testl, num_batches=nbatches)
+println("init acc: $init_acc")
+old_model = deepcopy(model)
+for e in 1:n_epochs
+    loss = train_model!(model, trainl, learning_rate=lr)
+    acc = calc_classification_accuracy(model, testl, num_batches=nbatches)
+    println("acc: $acc --- loss: $loss --- epoch: $e")
+    #println(model == old_model)
+    #old_model = deepcopy(model)
+end
+```
+
+# gaussian all rotations
+
+```{julia}
+all_tasks = prepare_all_gauss_loaders(conf)
+#function prepare_all_gauss_loaders(config::TaskConfig; batchsize::Int=32, shuffle_train::Bool=true)
+```
+
+
+```{julia}
+wq = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/datasets/wine_quality/winequality-red.csv", DataFrame)
+```
+
+```{julia}
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/5b5t_01lr_illustrate/data/param_8_rep_1/event_log.csv"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/big_runs/10b10t15c10000e100dt/data/param_7_rep_1/event_log.csv"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000/data/param_21_rep_1/event_log.csv"
+run_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/2b2t/2b2t15c10000e_dt50_500_1000/data/param_21_rep_1/"
+elog = load_log(run_path)
+```
+
+
+
+```{julia}
+run_path = joinpath(run_path, "event_log.csv")
+#filter!(row -> row.time > 999, elog)
+onset =  analyze_event_log_csv(run_path; thresholds = [0.8, 0.9])
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/steffen_scores/steffen_score.jl")
+#res = task_coverage_stats(elog, 0.8)
+steff = CSV.read("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/analysis_out/steffen_test.csv", DataFrame)
+```
+
+# testing old runs
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/onset/onset_analysis.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/steffen_scores/steffen_score.jl")
+root = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/results/test_runs/2b2t15c100e"
+runs = collect_runs([root])
+```
+
+```{julia}
+out = steffen_scores_one_run(runs[1])
+```
+
+```{julia}
+cfg = CSV.read(runs[1].config_path, DataFrame)
+```
+
+# testing steffens scores with new runs
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/steffen_scores/steffen_score_long.jl")
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t15c10000e5-6lr100ls_full_phase_diagram/data/param_1505_rep_3"
+states = CSV.read(joinpath(run_path, "states.csv"), DataFrame)
+```
+
+```{julia}
+root_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/2b2t15c10000e5-6lr100ls_full_phase_diagram/"
+runs = collect_runs([root_path], event_filename="states.csv")
+```
+
+```{julia}
+run = runs[1]
+out = steffen_scores_one_run_long(run)
+```
+
+# testing steffen scores with old runs
+
+```{julia}
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/2b2t/lr5-6/analysis"
+```
+
+```{julia}
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/50b50t/steffen_scores_50b50t_full_2026-02-10_1211.csv", DataFrame)
+```

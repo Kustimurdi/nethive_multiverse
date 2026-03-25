@@ -1,0 +1,22 @@
+```{julia}
+eta1 = 1
+eta2 = 10000
+eta3 = 100000000
+eta4 = 1000000000000
+x = range(-1.0, 1.0, length=1000)
+y1 = 1 ./ (1 .+ exp.(-eta1 .* x))
+y2 = 1 ./ (1 .+ exp.(-eta2 .* x))
+y3 = 1 ./ (1 .+ exp.(-eta3 .* x))
+y4 = 1 ./ (1 .+ exp.(-eta4 .* x))
+```
+
+```{julia}
+fig = Figure(size=(800, 600))
+ax = Axis(fig[1,1], xlabel="x", ylabel="sigmoid(x)", title="Sigmoid function for different sensitivities η")
+lines!(ax, x, y1, label="η = 1")
+lines!(ax, x, y2, label="η = 10^4")
+lines!(ax, x, y3, label="η = 100,000,000")
+lines!(ax, x, y4, label="η = 1,000,000,000,000")
+axislegend(ax)
+fig
+```

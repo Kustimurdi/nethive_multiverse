@@ -1,0 +1,40 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/env_mutltiverse_analysis")
+#using GLMakie
+using Statistics
+using CairoMakie
+using Plots
+```
+```{julia}
+#GLMakie.activate!()
+CairoMakie.activate!()
+```
+
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/analyse.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multiverse_analysis/multiverse_analysis_src/visualize_log.jl")
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep"
+data_path = joinpath(folder_path, "data/")
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+example_path = master_df.run_path[1]
+log_path = joinpath(example_path, "event_log.csv")
+example_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/multi_task_simulations/time_out_4t4n1000e10r_sweep/data/param_1_rep_1_2025-11-11_155635/event_log.csv"
+log = load_log(example_path)
+```
+
+```{julia}
+#function plot_tasks_grid_for_bee(df::DataFrame, bee;
+plot_tasks_grid_for_bee(log, 1)
+```

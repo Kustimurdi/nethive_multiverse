@@ -1,0 +1,518 @@
+```{julia}
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/steffen_scores_10b10t_heaviside_with_times_2026-03-05_2114.csv", DataFrame)
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/heaviside_sweep/steffen_scores_5b5t_heaviside_with_times_2026-03-05_1548.csv", DataFrame)
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/3b3t/steffen_scores_3b3t_with_times_2026-03-05_1459.csv", DataFrame)
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/ls100/steffen_scores_ls100_with_times_2026-03-05_2245.csv", DataFrame)
+```
+
+# for the eta sweep our parameters are alphatau and eta, to not change the plotting code we can just rename them here:
+```{julia}
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/steffen_scores_eta_sweep_with_times_2026-03-05_1531.csv", DataFrame)
+st2 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/5b5t_sensitivity_sweep/steffen_scores_eta_sweep_5b5t_sensitivity_sweep_with_times_2026-03-06_1724.csv", DataFrame)
+st = vcat(st, st2)
+st.alphatau = round.(st.interaction_rate .* st.dead_time, digits=2)
+st.eta = st.lambda_sensitivity
+st = subset(
+    st, 
+    :lambda_sensitivity => ByRow(>=(1.0)),
+    :alphatau => ByRow(>=(1.0))
+)
+```
+
+```{julia}
+test = subset(st, :eta => ByRow(==(5.0)), :alphatau => ByRow(==(1.0)))
+backup = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/")
+```
+
+```{julia}
+using DataFrames, Statistics
+
+# after your renaming
+min_alphaτ = minimum(skipmissing(st.alphatau))
+min_eta    = minimum(skipmissing(st.eta))
+
+@show min_alphaτ min_eta
+
+# rows that break log-scale
+bad = st[(st.alphatau .<= 0) .| (st.eta .<= 0), :]
+@show nrow(bad)
+
+# quick peek at culprits
+first(bad, 10) |> display
+```
+
+```{julia}
+using DataFrames, Statistics
+
+th = 0.9
+
+# (optional) restrict to one learning rate if multiple exist
+# lr = first(unique(st.learning_rate))
+# df_sel = subset(st, :threshold => ByRow(==(th)), :learning_rate => ByRow(==(lr)))
+
+df_sel = subset(st, :threshold => ByRow(==(th)))
+
+# one row per run = last recorded time
+df_last = combine(groupby(df_sel, :param_dir)) do sdf
+    sdf[argmax(sdf.time), :]
+end
+
+# ratios (per run, at final time)
+df_last.any_ratio     = df_last.any_geq ./ df_last.n_bees
+df_last.exactly_ratio = df_last.exactly_one_geq ./ df_last.n_bees
+df_last.unique_ratio  = df_last.unique_specialist ./ df_last.n_bees
+
+df_last.any_exactly_diff    = df_last.any_ratio - df_last.exactly_ratio
+df_last.exactly_unique_diff = df_last.exactly_ratio - df_last.unique_ratio
+```
+
+```{julia}
+# success flags for the full-coverage event (and others if you want)
+df_last.success_any_q = .!ismissing.(df_last.t_any_geq_q0_9)
+df_last.t_any_success = ifelse.(df_last.success_any_q, df_last.t_any_geq_q0_9, missing)
+
+# optional: for exactly-one / exclusive too
+df_last.success_exactly_q = .!ismissing.(df_last.t_exactly_one_geq_q0_9)
+df_last.t_exactly_success = ifelse.(df_last.success_exactly_q, df_last.t_exactly_one_geq_q0_9, missing)
+
+df_last.success_unique_q = .!ismissing.(df_last.t_unique_specialist_q0_9)
+df_last.t_unique_success = ifelse.(df_last.success_unique_q, df_last.t_unique_specialist_q0_9, missing)
+```
+
+```{julia}
+agg = combine(
+    groupby(df_last, [:alphatau, :eta]),
+    #groupby(df_last, [:interaction_rate, :dead_time]),
+
+    # coverage / uniqueness / exclusivity (you already have)
+    :unique_ratio => mean => :unique_ratio_mean,
+    :unique_ratio => std  => :unique_ratio_std,
+    :exactly_ratio => mean => :exactly_ratio_mean,
+    :exactly_ratio => std  => :exactly_ratio_std,
+    :any_ratio => mean => :any_ratio_mean,
+    :any_ratio => std  => :any_ratio_std,
+
+    :avg_agents_geq_per_task => mean => :avg_agents_mean,
+    :avg_agents_geq_per_task => std  => :avg_agents_std,
+
+    :any_exactly_diff => mean => :any_exactly_diff_mean,
+    :any_exactly_diff => std  => :any_exactly_diff_std,
+    :exactly_unique_diff => mean => :exactly_unique_diff_mean,
+    :exactly_unique_diff => std  => :exactly_unique_diff_std,
+
+    # run counts
+    :param_dir => (x -> length(unique(x))) => :n_runs,
+
+    # --- NEW: success fraction for "ever reached full coverage" ---
+    :success_any_q => mean => :p_success_any_q,      # in [0,1]
+    :success_any_q => sum  => :n_success_any_q,      # integer
+
+    # --- NEW: conditional onset time stats (only among successes) ---
+    :t_any_success => (x -> isempty(collect(skipmissing(x))) ? missing : mean(skipmissing(x))) => :t_any_mean_cond,
+    :t_any_success => (x -> isempty(collect(skipmissing(x))) ? missing : median(collect(skipmissing(x)))) => :t_any_median_cond,
+    :t_any_success => (x -> isempty(collect(skipmissing(x))) ? missing : std(collect(skipmissing(x)))) => :t_any_std_cond,
+)
+```
+
+```{julia}
+using CairoMakie
+
+function grid_from_df_nan(df::DataFrame; x=:interaction_rate, y=:dead_time, z=:any_ratio_mean)
+    xs = sort(unique(df[!, x]))
+    ys = sort(unique(df[!, y]))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    Z = fill(NaN, length(xs), length(ys))
+    for r in eachrow(df)
+        v = r[z]
+        Z[x_to_i[r[x]], y_to_j[r[y]]] = ismissing(v) ? NaN : float(v)
+    end
+    return xs, ys, Z
+end
+```
+
+```{julia}
+function log_edges(v::AbstractVector{<:Real})
+    v = sort(unique(float.(v)))
+    @assert all(v .> 0) "log_edges requires strictly positive coordinates."
+
+    n = length(v)
+    e = similar(v, n + 1)
+
+    # interior edges: geometric means
+    for i in 2:n
+        e[i] = sqrt(v[i-1] * v[i])
+    end
+
+    # extrapolate first/last edges by preserving local ratio
+    e[1]   = v[1]^2 / e[2]
+    e[end] = v[end]^2 / e[end-1]
+
+    # safety (numerical)
+    if e[1] <= 0
+        e[1] = v[1] / (v[2]/v[1])
+    end
+    return e
+end
+```
+
+```{julia}
+using CairoMakie
+using DataFrames
+
+function plot_heatmap_loglog_flipped(df::DataFrame;
+    alpha=:interaction_rate,
+    tau=:dead_time,
+    z::Symbol,
+    xlabel="Refractory time, τ",
+    ylabel="Suppression-rate prefactor, α",
+    cbar_label="",
+    labelsize=36,
+    ticksize=32,
+    contour_level=nothing,
+    colorscale::Function = identity,
+    nan_color = (:gray90, 1.0),
+
+    # optional extras (set to `nothing` to disable)
+    colorrange::Union{Nothing,Tuple{<:Real,<:Real}} = nothing,
+    highclip = nothing,   # e.g. :black
+    lowclip  = nothing,   # e.g. :white
+    cb_ticks = nothing,   # e.g. [0, 500, 1000, 2000, 3000, 4000]
+    cb_tickformat = xs -> string.(round.(Int, xs))
+)
+    df2 = filter(r -> r[alpha] > 0 && r[tau] > 0, df)
+
+    # build grid (NaN for missing)
+    xs = sort(unique(df2[!, alpha]))
+    ys = sort(unique(df2[!, tau]))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    Z = fill(NaN, length(xs), length(ys))
+    for r in eachrow(df2)
+        v = r[z]
+        if !ismissing(v)
+            Z[x_to_i[r[alpha]], y_to_j[r[tau]]] = Float32(v)
+        end
+    end
+
+    fig = Figure(size=(1000, 720))
+    #ax = Axis(fig[1,1];
+        #xscale=log10,
+        #yscale=log10,
+        #xlabel=xlabel,
+        #ylabel=ylabel,
+        #xlabelsize=labelsize,
+        #ylabelsize=labelsize,
+        #xticklabelsize=ticksize,
+        #yticklabelsize=ticksize
+    #)
+    ax = Axis(fig[1,1];
+        xscale=log10,
+        yscale=log10,
+        xautolimitmargin=(0, 0),
+        yautolimitmargin=(0, 0),
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlabelsize=labelsize,
+        ylabelsize=labelsize,
+        xticklabelsize=ticksize,
+        yticklabelsize=ticksize
+    )
+
+    xmin, xmax = minimum(ys), maximum(ys)   # x-axis is taus/etas because you plot heatmap!(ax, ys, xs, Z')
+    ymin, ymax = minimum(xs), maximum(xs)
+
+    xlims!(ax, xmin, xmax)
+    ylims!(ax, ymin, ymax)
+
+    # --- build heatmap kwargs safely ---
+    hm_kwargs = Dict{Symbol,Any}(
+        :nan_color => nan_color,
+        :colorscale => colorscale,
+    )
+    if colorrange !== nothing
+        hm_kwargs[:colorrange] = colorrange
+    end
+    if highclip !== nothing
+        hm_kwargs[:highclip] = highclip
+    end
+    if lowclip !== nothing
+        hm_kwargs[:lowclip] = lowclip
+    end
+
+    # x-axis is ys (tau / eta), y-axis is xs (alpha / alpha*tau)
+    xedges = log_edges(ys)
+    yedges = log_edges(xs)
+
+    hm = heatmap!(ax, xedges, yedges, Z';
+        hm_kwargs...
+        #nan_color = (:gray90, 1.0),
+        #colorscale = colorscale,
+        #colorrange = colorrange,
+    )
+
+    #hm = heatmap!(ax, ys, xs, Z'; hm_kwargs...)  # x=taus, y=alphas
+
+    if contour_level !== nothing
+        contour!(ax, ys, xs, Z'; levels=[contour_level], linewidth=3)
+    end
+
+    # --- Colorbar kwargs ---
+    cb_kwargs = Dict{Symbol,Any}(
+        :label => cbar_label,
+        :labelsize => labelsize,
+        :ticklabelsize => ticksize,
+    )
+    if cb_ticks !== nothing
+        cb_kwargs[:ticks] = cb_ticks
+        cb_kwargs[:tickformat] = cb_tickformat
+    end
+
+    Colorbar(fig[1,2], hm; cb_kwargs...)
+
+    return fig
+end
+```
+
+```{julia}
+fig_success = plot_heatmap_loglog_flipped(agg;
+    z=:p_success_any_q,
+    cbar_label="Success fraction (coverage≥0.9)",
+    colorrange=(0.0, 1.0),
+    #cb_ticks=[0.0, 0.25, 0.5, 0.75, 1.0],
+    contour_level=nothing,
+    tau = :alphatau,
+    alpha = :eta
+)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "onset_time_heatmaps")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "5x5_success_fraction_$(Dates.format(Dates.now(), "yyyy-mm-dd_HHMM"))"
+outfile_png = joinpath(save_path, "$descriptor.png")
+outfile_pdf = joinpath(save_path, "$descriptor.pdf")
+save(outfile_png, fig_success)
+save(outfile_pdf, fig_success)
+```
+
+```{julia}
+pmin = 0.2  # or 0.4 if you want only reliable points
+agg.t_any_mean_cond_masked = ifelse.(agg.p_success_any_q .>= pmin, agg.t_any_mean_cond, missing)
+
+fig_onset = plot_heatmap_loglog_flipped(agg;
+    z=:t_any_mean_cond_masked,
+    cbar_label="Mean onset time (epochs)",
+    #colorscale=log10,              # nice: shows 100 vs 1000 vs 10000 clearly
+    colorscale=sqrt,
+    contour_level=nothing
+)
+```
+
+```{julia}
+pmin = 0.2
+agg.t_any_mean_cond_masked = ifelse.(agg.p_success_any_q .>= pmin, agg.t_any_mean_cond, missing)
+
+fig_onset = plot_heatmap_loglog_flipped(agg;
+    z=:t_any_mean_cond_masked,
+    cbar_label="Mean onset time (epochs)",
+    colorscale=identity,
+    colorrange=(0.0, 6000.0),
+    highclip=:black,
+    cb_ticks=[0, 2000, 4000, 6000, 8000],
+)
+```
+
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "onset_time_heatmaps")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "5x5_onset_times_pmin$(pmin)_$(Dates.format(Dates.now(), "yyyy-mm-dd_HHMM"))"
+outfile_png = joinpath(save_path, "$descriptor.png")
+outfile_pdf = joinpath(save_path, "$descriptor.pdf")
+save(outfile_png, fig_onset)
+save(outfile_pdf, fig_onset)
+```
+
+
+```{julia}
+# add a success-fraction contour at pmin
+let df2 = filter(r -> r.interaction_rate>0 && r.dead_time>0, agg)
+    alphas, taus, P = grid_from_df_nan(df2; x=:interaction_rate, y=:dead_time, z=:p_success_any_q)
+    ax = content(fig_onset[1,1]) # grab Axis
+    contour!(ax, taus, alphas, P'; levels=[pmin], linewidth=3)
+end
+```
+
+```{julia}
+fig_onset = plot_heatmap_loglog_flipped(agg;
+    z = :t_any_mean_cond_masked,
+    cbar_label = "Mean onset time (epochs)",
+    colorscale = log10
+)
+
+# Overlay p_success contour = pmin
+let
+    xs = sort(unique(agg.interaction_rate))
+    ys = sort(unique(agg.dead_time))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    P = fill(NaN, length(xs), length(ys))
+    for r in eachrow(agg)
+        v = r.p_success_any_q
+        if !ismissing(v)
+            P[x_to_i[r.interaction_rate], y_to_j[r.dead_time]] = float(v)
+        end
+    end
+
+    ax = fig_onset[1,1] |> content
+    contour!(ax, ys, xs, P'; levels=[pmin], linewidth=3)
+end
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{julia}
+function plot_heatmap_loglog_flipped(df::DataFrame;
+    alpha=:interaction_rate,
+    tau=:dead_time,
+    z::Symbol,
+    xlabel="Refractory time, τ",
+    ylabel="Suppression-rate prefactor, α",
+    cbar_label="",
+    labelsize=34,
+    ticksize=30,
+    contour_level=nothing,          # e.g. 0.9 for coverage
+    colorscale=nothing,             # e.g. log10
+    nan_color=:transparent
+)
+    df2 = filter(r -> r[alpha] > 0 && r[tau] > 0 && !ismissing(r[z]), df)
+
+    alphas, taus, Z = grid_from_df_nan(df2; x=alpha, y=tau, z=z)
+
+    fig = Figure(size=(1000, 720))
+    ax = Axis(fig[1,1];
+        xscale=log10,
+        yscale=log10,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlabelsize=labelsize,
+        ylabelsize=labelsize,
+        xticklabelsize=ticksize,
+        yticklabelsize=ticksize,
+    )
+
+    hm = heatmap!(ax, taus, alphas, Z';
+        nan_color=nan_color,
+        colorscale=colorscale
+    )
+
+    if contour_level !== nothing
+        contour!(ax, taus, alphas, Z'; levels=[contour_level], linewidth=3)
+    end
+
+    Colorbar(fig[1,2], hm;
+        label=cbar_label,
+        labelsize=labelsize,
+        ticklabelsize=ticksize
+    )
+
+    fig
+end
+```
+
+```{julia}
+using CairoMakie
+
+function plot_heatmap_loglog_flipped(df::DataFrame;
+    alpha=:interaction_rate,
+    tau=:dead_time,
+    z::Symbol,
+    xlabel="Refractory time, τ",
+    ylabel="Suppression-rate prefactor, α",
+    cbar_label="",
+    labelsize=36,
+    ticksize=32,
+    contour_level=nothing,              # e.g. 0.9
+    colorscale::Function = identity,    # <-- IMPORTANT
+    nan_color = (:black, 0.0)           # transparent
+)
+    df2 = filter(r -> r[alpha] > 0 && r[tau] > 0, df)
+
+    # build grid (NaN for missing)
+    xs = sort(unique(df2[!, alpha]))
+    ys = sort(unique(df2[!, tau]))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    Z = fill(NaN, length(xs), length(ys))
+    for r in eachrow(df2)
+        v = r[z]
+        if !ismissing(v)
+            Z[x_to_i[r[alpha]], y_to_j[r[tau]]] = float(v)
+        end
+    end
+
+    fig = Figure(size=(1000, 720))
+    ax = Axis(fig[1,1];
+        xscale=log10,
+        yscale=log10,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlabelsize=labelsize,
+        ylabelsize=labelsize,
+        xticklabelsize=ticksize,
+        yticklabelsize=ticksize
+    )
+
+    hm = heatmap!(ax, ys, xs, Z';    # x=taus, y=alphas
+        #nan_color=nan_color,
+        nan_color = (:gray90, 1.0),   # or :lightgray
+        colorscale=colorscale
+        #colorscale = log10
+    )
+
+    if contour_level !== nothing
+        contour!(ax, ys, xs, Z'; levels=[contour_level], linewidth=3)
+    end
+
+    cb_ticks = [0, 2000, 4000, 6000, 8000]
+    Colorbar(fig[1,2], hm;
+        label = cbar_label,
+        ticks = cb_ticks,
+        labelsize = labelsize,
+        ticklabelsize = ticksize
+    )
+
+    return fig
+end
+```

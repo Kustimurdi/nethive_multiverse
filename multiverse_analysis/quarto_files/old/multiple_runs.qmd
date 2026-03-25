@@ -1,0 +1,171 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/load_data.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/analyse.jl")
+#using GLMakie
+using Statistics
+using CairoMakie
+```
+
+# Get unique sorted axis values
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/pray/standard_prefactor_sweep_pray"
+data_path = joinpath(folder_path, "data")
+
+```
+
+```{julia}
+master_df = build_master_dataframe(data_path)
+runs = load_runs(master_df.run_path)
+#actual_full_results = analyze_runs(runs)
+actual_full_results = analyze_runs_threaded(runs, avg_timesteps=5)
+```
+
+# Expect the runs that have NaN values (maybe sollte ich darauf ein eigenes File machen)
+
+```{julia}
+failed_runs = filter(row -> ismissing(row.score_n1) || ismissing(row.score_n2) ||
+                            isnan(row.score_n1) || isnan(row.score_n2), actual_full_results)
+```
+
+```{julia}
+#full_results = filter(row -> row.interaction_rate < 100, actual_full_results)
+#full_results = filter(row -> !ismissing(row.score_n1) && !ismissing(row.score_n2) &&
+                             #!isnan(row.score_n1) && !isnan(row.score_n2), actual_full_results)
+full_results = actual_full_results
+```
+
+# Check data
+
+```{julia}
+# Count replications per parameter combination
+replication_counts = combine(groupby(full_results, [:lambda_sensitivity, :interaction_rate]), 
+                           nrow => :n_replications,
+                           :seed => (x -> length(unique(x))) => :n_unique_seeds)
+
+# View the results
+println(replication_counts)
+
+# Check if all parameter combinations have the same number of replications
+unique(replication_counts.n_replications)
+```
+
+# Prepare heatmap data
+```{julia}
+# Calculate averages across replications
+averaged_results = combine(groupby(full_results, [:lambda_sensitivity, :interaction_rate]),
+                          :score_n1 => mean => :mean_score_n1,
+                          :score_n2 => mean => :mean_score_n2,
+                          :id_is_same => mean => :fraction_id_same,  # Boolean → fraction
+                          :id_is_same => sum => :sum_id_same,
+                          :seed => (x -> length(unique(x))) => :n_replications,
+                          nrow => :n_rows)
+
+# View results
+println(averaged_results)
+```
+
+# Extra Information
+
+```{julia}
+# 1. Standard deviation to see variability across seeds
+variability_check = combine(groupby(full_results, [:lambda_sensitivity, :interaction_rate]),
+                           :score_n1 => std => :std_score_n1,
+                           :score_n2 => std => :std_score_n2,
+                           :id_is_same => std => :std_id_same)
+
+# 2. Min/Max ranges
+ranges_check = combine(groupby(full_results, [:lambda_sensitivity, :interaction_rate]),
+                      :score_n1 => (x -> (minimum(x), maximum(x))) => :score_n1_range,
+                      :score_n2 => (x -> (minimum(x), maximum(x))) => :score_n2_range)
+
+# 3. Check for any missing replications
+expected_seeds = unique(full_results.seed)  # All seeds that should exist
+missing_combos = combine(groupby(full_results, [:lambda_sensitivity, :interaction_rate]),
+                        :seed => (x -> setdiff(expected_seeds, x)) => :missing_seeds)
+filter(row -> length(row.missing_seeds) > 0, missing_combos)
+```
+
+# score heatmap
+```{julia}
+x_vals = sort(unique(full_results.interaction_rate))
+y_vals = sort(unique(full_results.lambda_sensitivity))
+
+deleteat!(x_vals, 1)
+deleteat!(y_vals, 1)
+
+heatmap_matrix = [begin
+    row = (averaged_results.interaction_rate .== x) .& (averaged_results.lambda_sensitivity .== y)
+    if any(row)
+        averaged_results.mean_score_n1[row][1] * averaged_results.mean_score_n2[row][1]
+    else
+        NaN  # or 0, if you prefer
+    end
+end for y in y_vals, x in x_vals]
+
+push!(x_vals, maximum(x_vals) * 10)
+push!(y_vals, maximum(y_vals) * 10)
+```
+
+```{julia}
+n_runs = averaged_results.n_rows[1]
+f = Figure()
+ax = Axis(f[1, 1], xlabel="Interaction Rate [1/s]", ylabel="Lambda Sensitivity", title="Total score S averaged over $(n_runs) runs",
+        xscale=log10, yscale=log10)
+hm = heatmap!(ax, x_vals, y_vals, heatmap_matrix')
+Colorbar(f[1,2], hm)
+
+#scatter!(ax, [(x, y) for x in x_vals for y in y_vals], color=:white, strokecolor=:black, strokewidth=1)
+f
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "score_heatmap.svg"), f)
+save(joinpath(save_path, "score_heatmap.pdf"), f)
+println(joinpath(save_path, "score_heatmap.svg"))
+```
+
+# binary id is same heatmap
+```{julia}
+x_vals = sort(unique(full_results.interaction_rate))
+y_vals = sort(unique(full_results.lambda_sensitivity))
+
+deleteat!(x_vals, 1)
+deleteat!(y_vals, 1)
+
+id_heatmap_matrix = [begin
+    row = (averaged_results.interaction_rate .== x) .& (averaged_results.lambda_sensitivity .== y)
+    if any(row)
+        averaged_results.sum_id_same[row][1]
+    else
+        NaN  # or 0, if you prefer
+    end
+end for y in y_vals, x in x_vals]
+
+
+push!(x_vals, maximum(x_vals) * 10)
+push!(y_vals, maximum(y_vals) * 10)
+```
+
+```{julia}
+id_f = Figure()
+id_ax = Axis(id_f[1, 1], xlabel="Interaction Rate [1/s]", ylabel="Lambda Sensitivity", title="Count of dual high states over $(n_runs) runs",
+        xscale=log10, yscale=log10)
+hm = heatmap!(id_ax, x_vals, y_vals, id_heatmap_matrix')
+Colorbar(id_f[1,2], hm)
+
+#scatter!(ax, [(x, y) for x in x_vals for y in y_vals], color=:white, strokecolor=:black, strokewidth=1)
+id_f
+```
+
+```{julia}
+save_path = joinpath(folder_path, "plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+save(joinpath(save_path, "sum_id_same.svg"), id_f)
+save(joinpath(save_path, "sum_id_same.pdf"), id_f)
+```

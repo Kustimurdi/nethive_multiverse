@@ -1,0 +1,96 @@
+```{julia}
+using Pkg
+Pkg.activate("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/env_nethive_multiverse")
+#Pkg.instantiate()
+```
+
+
+```{julia}
+# Load packages directly (they should be available via JULIA_PROJECT)
+using ArgParse
+using CSV
+using DataFrames
+using Distributions
+using Flux
+using JSON3
+using LinearAlgebra
+using MLDatasets
+using Random
+using Statistics
+using Dates
+```
+
+```{julia}
+# Load our modules
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/loaders.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/data/synthetic.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/definitions.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/multitask_training.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/methods.jl")
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/src/core/save_data.jl")
+```
+
+# dataset creation
+
+```{julia}
+n_classes = 5
+n_tasks = 5
+features_dimension = 20
+n_per_class_train = 10
+n_per_class_test = 5
+use_per_class_variance = true
+variance_bounds = (0.01, 0.03)
+center_generation_bounds = (0.0, 1.0)
+
+conf = TaskConfig(n_classes,
+                n_tasks,
+                features_dimension,
+                n_per_class_train,
+                n_per_class_test,
+                use_per_class_variance,
+                variance_bounds,
+                center_generation_bounds)
+```
+```{julia}
+dataset = create_dataset(conf)
+all_datasets = generate_rotated_tasks(dataset, conf.n_tasks)
+trainl, testl = create_gauss_loaders(dataset.train_data, dataset.test_data; batchsize=16, shuffle_train=true)
+loaders = prepare_all_gauss_loaders(conf; batchsize=16, shuffle_train=true)
+```
+
+```{julia}
+mt = create_gauss_model_template(conf)
+model = mt()
+```
+
+```{julia}
+trainx, trainy = dataset.train_data
+y_pred = model(trainx)
+println("size y pred: ", size(y_pred))
+println("size y truth: ", size(trainy))
+```
+
+```{julia}
+task_loaders = loaders[:task_5]
+trainloader = task_loaders["train"]
+testloader = task_loaders["test"]
+n_epochs = 1000
+lr = 0.00001
+nbatches = 1
+init_acc = calc_classification_accuracy(model, testloader, num_batches=nbatches)
+println("init acc: $init_acc")
+old_model = deepcopy(model)
+for e in 1:n_epochs
+    loss = train_model!(model, trainloader, learning_rate=lr)
+    acc = calc_classification_accuracy(model, testloader, num_batches=nbatches)
+    println("acc: $acc --- loss: $loss --- epoch: $e")
+    #println(model == old_model)
+    #old_model = deepcopy(model)
+end
+```
+
+Das Training scheint zu funktionieren, sowohl das originale Dataset als auch die rotierten. UND oft trainiert es, ohne dass sich die acc verbessert, es passiert tatsaechlich schrittweise. das ist also oke. was nicht passt, ist der prozess hinter der Auswahl der Aktionen, und dass sich die acc gar nicth geaendert hat. Obwohl, das koennte auch davon kommen, dass es noch laenger braucht und ich in einer Phase von nicht fortschritt war. Als erstes teste ich, ob es ohne interaktionen letztendlich die Aufgaben erlernt
+
+Als naechstes kann man testen, ob die Funktionen, die damit interagieren (eg. update all bees das richtige machen)
+
+```{julia}

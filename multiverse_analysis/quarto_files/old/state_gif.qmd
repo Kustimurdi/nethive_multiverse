@@ -1,0 +1,77 @@
+```{julia}
+include("/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/2d_bees_analysis/2d_analysis_src/load_data.jl")
+```
+
+```{julia}
+#folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_adding_second_gene_replicate_sweep"
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_queen_gene_vector/bee_sims/_2_tasks_2_bees_adding_2nd_qg_sweep/"
+data_path = joinpath(folder_path, "data")
+master_df = build_master_dataframe(data_path)
+```
+
+```{julia}
+filtered_df = filter(row -> row.lambda_sensitivity == 0.1 && row.interaction_rate == 1, master_df)
+```
+
+# Alternative filter via analysis results
+
+```{julia}
+runs = load_runs(master_df.run_path)
+actual_full_results = analyze_runs_threaded(runs)
+```
+
+```{julia}
+filtered_df = filter(row -> row.lambda_sensitivity == 1 && row.interaction_rate == 1000, actual_full_results)
+#filtered_df = filter(row -> row.score_n1 * row.score_n2 < 0.9, filtered_df)
+filtered_df = filter(row -> (row.score_n1 >0.9 || row.score_n2 >0.9) && row.score_n1*row.score_n2 < 0.9, filtered_df)
+```
+
+```{julia}
+individual_run_path = filtered_df.run_path[1]
+run_data = load_run(individual_run_path)
+states = run_data.states
+```
+
+```{julia}
+max_time = sort(unique(states.time))[end]
+n1_max = maximum(states.n1)
+n2_max = maximum(states.n2)
+time = Observable(0.0)
+xdata = @lift(states[states.time .== $time[], :n1])
+ydata = @lift(states[states.time .== $time[], :n2])
+
+fig = Figure(resolution=(600,600)) 
+ax = Axis(fig[1,1], title = @lift("t = $(round($time, digits = 1))"), 
+          limits = (0, n1_max+5, 0, n2_max+5), xlabel = "n1", ylabel = "n2")
+scatter!(xdata, ydata, color = :red, markersize=20)
+
+framerate = 1
+timestamps = range(0, max_time, step=1/framerate)
+
+save_path = joinpath(folder_path, "plots") 
+if !isdir(save_path)
+    mkdir(save_path)
+end
+base_name = basename(individual_run_path)
+gif_path = joinpath(save_path, "states_animation_$(base_name).mp4")
+record(fig, gif_path, timestamps; framerate = framerate) do t
+    time[] = t
+end
+
+```
+
+```{julia}
+states = run_data.states
+
+timesteps = sort(unique(states.time))
+scene = scatter(states.n1[states.time .== timesteps[1]], 
+                states.n2[states.time .== timesteps[1]],
+                markersize=10,
+                color=:blue)
+Makie.Axis(scene, xlabel="n1", ylabel="n2", title="State Distribution")
+
+record(scene, "state_distribution.gif", 1:length(timesteps)) do i 
+    df_t = filter(row -> row.time == timesteps[i], states)
+    scene.plots[1][] = (df_t.n1, df_t.n2)
+end
+```

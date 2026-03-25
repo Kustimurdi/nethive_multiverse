@@ -1,0 +1,475 @@
+```{julia}
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/5b5t_01lr_illustrate/data/param_8_rep_1"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/data/param_44_rep_1"
+run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_illustrative/data/param_11_rep_2"
+#run_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_car_bank_wdbc/data/param_51_rep_2"
+```
+
+```{julia}
+folder_path = "/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_illustrative/data"
+```
+
+```{julia}
+master_df = build_master_dataframe(folder_path)
+```
+
+```{julia}
+sub = subset(
+    master_df,
+    :interaction_rate => ByRow(==(10))
+)
+run_path = sub.run_path[2]
+```
+
+# load data
+
+```{julia}
+states = CSV.read(joinpath(run_path,"states.csv"), DataFrame)
+config = load_config(joinpath(run_path, "config.json"))
+mapping = load_task_index_mapping(run_path)
+```
+
+```{julia}
+s_a1 = subset(
+    states,
+    :bee_id => ByRow(==(1))
+)
+sa1t1 = subset(
+    s_a1,
+    :task_id => ByRow(==(1))
+)
+sa1t2 = subset(
+    s_a1,
+    :task_id => ByRow(==(2))
+)
+sa1t3 = subset(
+    s_a1,
+    :task_id => ByRow(==(3))
+)
+
+s_a2 = subset(
+    states,
+    :bee_id => ByRow(==(2))
+)
+sa2t1 = subset(
+    s_a2,
+    :task_id => ByRow(==(1))
+)
+sa2t2 = subset(
+    s_a2,
+    :task_id => ByRow(==(2))
+)
+sa2t3 = subset(
+    s_a2,
+    :task_id => ByRow(==(3))
+)
+
+s_a3 = subset(
+    states,
+    :bee_id => ByRow(==(3))
+)
+sa3t1 = subset(
+    s_a3,
+    :task_id => ByRow(==(1))
+)
+sa3t2 = subset(
+    s_a3,
+    :task_id => ByRow(==(2))
+)
+sa3t3 = subset(
+    s_a3,
+    :task_id => ByRow(==(3))
+)
+
+task_index(s::AbstractString) = parse(Int, match(r"task_(\d+)", s).captures[1])
+task_label(s::AbstractString) = latexstring("\\text{Task }", task_index(s))
+```
+
+```{julia}
+using CairoMakie
+using GeometryBasics: Point3f
+
+to_points3(x, y, z) = Point3f.(Float32.(x), Float32.(y), Float32.(z))
+
+function plot_trajs_lines_cairo(ax, x, y, z; color=:red, linewidth=2, label="", alpha=0.85)
+    pts = to_points3(x, y, z)
+    lines!(ax, pts; color=color, linewidth=linewidth, label=label, alpha=alpha)
+    return pts
+end
+```
+
+```{julia}
+function downsample_points(pts::Vector{Point3f}; max_points::Int=800)
+    n = length(pts)
+    n <= max_points && return pts
+    idx = round.(Int, range(1, n, length=max_points))
+    return pts[idx]
+end
+```
+
+```{julia}
+deg2rad(θ) = θ * (pi/180)
+
+#fig = Figure(size=(800, 650), figure_padding=(20, 200, 20, 20))
+fig = Figure(size=(800, 650), figure_padding=(80, 220, 30, 60))
+# padding = (left, right, bottom, top)
+
+ax = Axis3(fig[1,1],
+    #xlabel = mapping[sa1t1.task_id[1]],
+    #ylabel = mapping[sa1t2.task_id[1]],
+    #zlabel = mapping[sa1t3.task_id[1]],
+    xlabel = L"\text{Accuracy: }T_1",
+    ylabel = L"\text{Accuracy: }T_2",
+    zlabel = L"\text{Accuracy: }T_3",
+    azimuth = deg2rad(40),
+    elevation = 0.13pi,
+)
+
+pts1 = plot_trajs_lines_cairo(ax, sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies; color=:red,  linewidth=2, label=L"\text{Agent 1}")
+pts2 = plot_trajs_lines_cairo(ax, sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies; color=:blue, linewidth=2, label=L"\text{Agent 2}")
+pts3 = plot_trajs_lines_cairo(ax, sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies; color=:green,linewidth=2, label=L"\text{Agent 3}")
+
+# downsampled scatter (optional)
+meshscatter!(ax, downsample_points(pts1; max_points=50); color=:red,  markersize=0.006)
+meshscatter!(ax, downsample_points(pts2; max_points=50); color=:blue, markersize=0.006)
+meshscatter!(ax, downsample_points(pts3; max_points=50); color=:green,markersize=0.006)
+
+# endpoints (always)
+meshscatter!(ax, [pts1[end]]; color=:red,  markersize=0.02)
+meshscatter!(ax, [pts2[end]]; color=:blue, markersize=0.02)
+meshscatter!(ax, [pts3[end]]; color=:green,markersize=0.02)
+
+limits!(ax, 0, 1, 0, 1, 0, 1)
+ax.xlabeloffset = 50
+ax.ylabeloffset = 50
+ax.zlabeloffset = 60
+resize_to_layout!(fig)
+
+labelsize = 32
+ticklabelsize = 28
+
+ax.xlabelsize = labelsize
+ax.ylabelsize = labelsize
+ax.zlabelsize = labelsize
+
+ax.xticklabelsize = ticklabelsize
+ax.yticklabelsize = ticklabelsize
+ax.zticklabelsize = ticklabelsize
+
+ax.xticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+ax.yticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+ax.zticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+#ax.aspect = :data
+
+axislegend(ax, 
+    position = :lt,
+    labelsize = ticklabelsize,
+    framevisible = false)
+
+#save("traj3d.png", fig; px_per_unit=3)
+#save("traj3d.pdf", fig)
+
+fig
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "3d_plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+basen = basename(run_path)
+folder_name = basename(dirname(dirname(run_path)))
+name = "3d_plot_$(folder_name)_$(basen)_clean"
+save(joinpath(save_path, "$(name).pdf"), fig)
+save(joinpath(save_path, "$(name).png"), fig)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{julia}
+using CairoMakie
+using GeometryBasics: Point3f
+
+to_points3(x, y, z) = Point3f.(Float32.(x), Float32.(y), Float32.(z))
+
+function plot_acc_traj_3d_cairo(sa1t1, sa1t2, sa1t3,
+                                sa2t1, sa2t2, sa2t3,
+                                sa3t1, sa3t2, sa3t3;
+                                mapping=nothing,
+                                outfile_base="acc_traj_3d",
+                                azimuth_deg=12,
+                                elevation=0.13pi)
+
+    fig = Figure(size=(900, 700), figure_padding=(20, 160, 20, 20)) # extra right padding for zlabel
+    ax = Axis3(fig[1, 1],
+        xlabel = mapping === nothing ? "Task 1" : mapping[sa1t1.task_id[1]],
+        ylabel = mapping === nothing ? "Task 2" : mapping[sa1t2.task_id[1]],
+        zlabel = mapping === nothing ? "Task 3" : mapping[sa1t3.task_id[1]],
+        azimuth = azimuth_deg * pi/180,
+        elevation = elevation,
+    )
+
+    pts1 = to_points3(sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies)
+    pts2 = to_points3(sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies)
+    pts3 = to_points3(sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies)
+
+    # Points + lines
+    meshscatter!(ax, pts1; color=:red,   markersize=0.01)
+    meshscatter!(ax, pts2; color=:blue,  markersize=0.01)
+    meshscatter!(ax, pts3; color=:green, markersize=0.01)
+
+    lines!(ax, pts1; color=:red,   linewidth=2)
+    lines!(ax, pts2; color=:blue,  linewidth=2)
+    lines!(ax, pts3; color=:green, linewidth=2)
+
+    # emphasize final points
+    meshscatter!(ax, [pts1[end]]; color=:red,   markersize=0.03)
+    meshscatter!(ax, [pts2[end]]; color=:blue,  markersize=0.03)
+    meshscatter!(ax, [pts3[end]]; color=:green, markersize=0.03)
+
+    limits!(ax, 0, 1, 0, 1, 0, 1)
+    ax.aspect = :data
+
+    # zlabel clipping fixes
+    ax.zlabeloffset = 50
+    resize_to_layout!(fig)
+
+    # Save: make PNG high-res
+    #save(outfile_base * ".png", fig; px_per_unit=3)
+    #save(outfile_base * ".pdf", fig)
+
+    return fig
+end
+```
+
+```{julia}
+fig = plot_acc_traj_3d_cairo(sa1t1, sa1t2, sa1t3,
+                             sa2t1, sa2t2, sa2t3,
+                             sa3t1, sa3t2, sa3t3;
+                             mapping=mapping,
+                             outfile_base="acc_traj_3d",
+                                azimuth_deg=40,
+                                elevation=0.11pi
+                             )
+```
+```{julia}
+dfig = Figure()
+deg2rad(θ) = θ * (pi/180)
+az = deg2rad(12)
+#az = deg2rad(18)
+el = 0.13 * pi
+labelsize = 20
+ticklabelsize = 18
+#task_cols = names(log_last, r"^task_")
+ax = Axis3(dfig[1,1], 
+                xlabel=mapping[sa1t1.task_id[1]],
+                ylabel=mapping[sa1t2.task_id[1]],
+                zlabel=mapping[sa1t3.task_id[1]],
+                #xlabel=task_label(mapping[1]), 
+                #ylabel=task_label(mapping[2]), 
+                #zlabel=task_label(mapping[3]),
+                azimuth=az*pi,
+                elevation = el)
+#lines!(ax, sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies, linewidth=4, color=(:red, 0.85), label=latexstring("\\text{Agent }", s_a1.bee_id[1]))
+#scatter!(ax, sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies, markersize=4, color=(:red, 0.85), label=latexstring("\\text{Agent }", s_a1.bee_id[1]))
+scatter!(ax, [sa1t1.accuracies[end]], [sa1t2.accuracies[end]], [sa1t3.accuracies[end]], markersize=20, color=:red)
+#lines!(ax, sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies, linewidth=4, color=(:blue, 0.85), label=latexstring("\\text{Agent }", s_a2.bee_id[2]))
+#scatter!(ax, sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies, markersize=4, color=(:blue, 0.85), label=latexstring("\\text{Agent }", s_a2.bee_id[2]))
+scatter!(ax, sa2t1.accuracies[end], sa2t2.accuracies[end], sa2t3.accuracies[end], markersize=20, color=:blue)
+#lines!(ax, sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies, linewidth=4, color=(:green, 0.85), label=latexstring("\\text{Agent }", s_a3.bee_id[3]))
+#scatter!(ax, sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies, markersize=4, color=(:green, 0.85), label=latexstring("\\text{Agent }", s_a3.bee_id[3]))
+scatter!(ax, sa3t1.accuracies[end], sa3t2.accuracies[end], sa3t3.accuracies[end], markersize=20, color=:green)
+ax.xgridcolor = (:gray, 0.3)
+ax.ygridcolor = (:gray, 0.3)
+ax.zgridcolor = (:gray, 0.3)
+ax.xlabelsize = labelsize
+ax.ylabelsize = labelsize
+ax.zlabelsize = labelsize
+ax.xticklabelsize = ticklabelsize
+ax.yticklabelsize = ticklabelsize
+ax.zticklabelsize = ticklabelsize
+ax.xticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+ax.yticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+ax.zticks = ([0, 0.5, 1.0], [L"0", L"0.5", L"1"])
+ax.aspect = :data
+#axislegend(ax, 
+    #position = :lt,
+    #labelsize = ticklabelsize,
+    #framevisible = false)
+```
+
+```{julia}
+display(dfig)
+```
+
+```{julia}
+# using CairoMakie  # if you insist on static, still try meshscatter
+
+deg2rad(θ) = θ * (pi/180)
+
+dfig = Figure(size=(700, 600))
+
+ax = Axis3(dfig[1,1],
+    xlabel = mapping[sa1t1.task_id[1]],
+    ylabel = mapping[sa1t2.task_id[1]],
+    zlabel = mapping[sa1t3.task_id[1]],
+    azimuth = deg2rad(40),     # radians, no extra *pi
+    elevation = 0.13pi,
+)
+
+pts = Point3f[
+    (sa1t1.accuracies[end], sa1t2.accuracies[end], sa1t3.accuracies[end]),
+    (sa2t1.accuracies[end], sa2t2.accuracies[end], sa2t3.accuracies[end]),
+    (sa3t1.accuracies[end], sa3t2.accuracies[end], sa3t3.accuracies[end]),
+    #(sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies),
+    #(sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies),
+    #(sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies),
+]
+
+meshscatter!(ax, pts;
+    color = [:red, :blue, :green],
+    markersize = 0.01,   # in *data units* for meshscatter; try 0.02–0.06
+)
+
+# Make sure the limits include your [0,1] domain
+limits!(ax, 0, 1, 0, 1, 0, 1)
+
+dfig
+```
+
+```{julia}
+using GeometryBasics: Point3f
+
+# helper: build Point3f vector from three equal-length vectors
+to_points3(x, y, z) = Point3f.(Float32.(x), Float32.(y), Float32.(z))
+
+pts1 = to_points3(sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies)
+pts2 = to_points3(sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies)
+pts3 = to_points3(sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies)
+
+meshscatter!(ax, pts1; color=:red,  markersize=0.01)   # tune markersize
+meshscatter!(ax, pts2; color=:blue, markersize=0.01)
+meshscatter!(ax, pts3; color=:green, markersize=0.01)
+
+# (optional) also draw connecting lines
+lines!(ax, pts1; linewidth=2, color=:red)
+lines!(ax, pts2; linewidth=2, color=:blue)
+lines!(ax, pts3; linewidth=2, color=:green)
+
+limits!(ax, 0, 1, 0, 1, 0, 1)
+
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "3d_plots")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "all_dt_og_int"
+name = "3d_plot"
+save(joinpath(save_path, "$(name).pdf"), dfig)
+save(joinpath(save_path, "$(name).png"), dfig)
+```
+
+```{julia}
+using GeometryBasics: Point3f
+
+# helper: 3 vectors -> Vector{Point3f}
+to_points3(x, y, z) = Point3f.(Float32.(x), Float32.(y), Float32.(z))
+
+"""
+    make_acc_traj_3d(; ... ) -> Figure
+
+Plots three 3D trajectories (points + lines) in [0,1]^3.
+Pass in your sa?t? objects (must have .accuracies vectors and .task_id[1] if mapping is used).
+"""
+function make_acc_traj_3d(sa1t1, sa1t2, sa1t3,
+                          sa2t1, sa2t2, sa2t3,
+                          sa3t1, sa3t2, sa3t3;
+                          mapping=nothing,
+                          azimuth_deg=12,
+                          elevation=0.13pi,
+                          labelsize=20,
+                          ticklabelsize=18)
+
+    fig = Figure(size=(800, 650), figure_padding=(20, 120, 20, 20))
+    ax = Axis3(fig[1, 1],
+        xlabel = mapping === nothing ? "Task 1" : mapping[sa1t1.task_id[1]],
+        ylabel = mapping === nothing ? "Task 2" : mapping[sa1t2.task_id[1]],
+        zlabel = mapping === nothing ? "Task 3" : mapping[sa1t3.task_id[1]],
+        azimuth = azimuth_deg * pi/180,
+        elevation = elevation,
+    )
+
+    # build full trajectories
+    pts1 = to_points3(sa1t1.accuracies, sa1t2.accuracies, sa1t3.accuracies)
+    pts2 = to_points3(sa2t1.accuracies, sa2t2.accuracies, sa2t3.accuracies)
+    pts3 = to_points3(sa3t1.accuracies, sa3t2.accuracies, sa3t3.accuracies)
+
+    # points (meshscatter is reliable in 3D)
+    meshscatter!(ax, pts1; color=:red,   markersize=0.01)
+    meshscatter!(ax, pts2; color=:blue,  markersize=0.01)
+    meshscatter!(ax, pts3; color=:green, markersize=0.01)
+
+    # connect with lines (optional but helpful)
+    lines!(ax, pts1; color=:red,   linewidth=2)
+    lines!(ax, pts2; color=:blue,  linewidth=2)
+    lines!(ax, pts3; color=:green, linewidth=2)
+
+    # highlight endpoints
+    meshscatter!(ax, [pts1[end]]; color=:red,   markersize=0.03)
+    meshscatter!(ax, [pts2[end]]; color=:blue,  markersize=0.03)
+    meshscatter!(ax, [pts3[end]]; color=:green, markersize=0.03)
+
+    # cosmetics
+    ax.xgridcolor = (:gray, 0.3)
+    ax.ygridcolor = (:gray, 0.3)
+    ax.zgridcolor = (:gray, 0.3)
+
+    ax.xlabelsize = labelsize
+    ax.ylabelsize = labelsize
+    ax.zlabelsize = labelsize
+    ax.xticklabelsize = ticklabelsize
+    ax.yticklabelsize = ticklabelsize
+    ax.zticklabelsize = ticklabelsize
+
+    ax.xticks = ([0, 0.5, 1.0], ["0", "0.5", "1"])
+    ax.yticks = ([0, 0.5, 1.0], ["0", "0.5", "1"])
+    ax.zticks = ([0, 0.5, 1.0], ["0", "0.5", "1"])
+
+    ax.aspect = :data
+    limits!(ax, 0, 1, 0, 1, 0, 1)
+
+    # zlabel cropping fix
+    ax.zlabeloffset = 30
+    resize_to_layout!(fig)
+
+    return fig
+end
+```
+
+```{julia}
+using GLMakie
+GLMakie.activate!(; visible=false)   # key for SSH/headless
+
+fig = make_acc_traj_3d(sa1t1, sa1t2, sa1t3,
+                       sa2t1, sa2t2, sa2t3,
+                       sa3t1, sa3t2, sa3t3;
+                       mapping=mapping)
+
+#save("acc_traj_3d.png", fig; px_per_unit=3)  # 2–4 is typical
+```

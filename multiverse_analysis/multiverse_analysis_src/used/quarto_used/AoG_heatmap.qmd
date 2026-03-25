@@ -1,0 +1,272 @@
+```{julia}
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_ultra_heaviside_small/steffen_scores_3b3t_ultra_heaviside_small_2026-03-02_2039.csv", DataFrame)
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/heaviside_sweep/steffen_scores_5b5t_heaviside_with_times_2026-03-05_1548.csv", DataFrame)
+#st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/steffen_scores_10b10t_heaviside_with_times_2026-03-05_2114.csv", DataFrame)
+st = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/15-10size_test/steffen_scores_15-10size_test_with_times_2026-03-08_1304.csv", DataFrame)
+```
+
+```{julia}
+th = 0.9
+lrs = unique(st.learning_rate)
+lr = lrs[1]
+df_sel = subset(
+    st, 
+    :threshold => ByRow(==(th)),
+)
+```
+
+```{julia}
+df_last = combine(groupby(df_sel, :param_dir)) do sdf
+    sdf[argmax(sdf.time), :]
+end
+```
+
+```{julia}
+df_last.any_ratio = df_last.any_geq ./ df_last.n_bees
+df_last.exactly_ratio = df_last.exactly_one_geq ./ df_last.n_bees
+df_last.unique_ratio = df_last.unique_specialist ./ df_last.n_bees
+df_last.any_exactly_diff = df_last.any_ratio - df_last.exactly_ratio
+df_last.exactly_unique_diff = df_last.exactly_ratio - df_last.unique_ratio
+```
+
+```{julia}
+agg = combine(
+    groupby(df_last, [:interaction_rate, :dead_time]),
+    :unique_ratio => mean => :unique_ratio_mean,
+    :unique_ratio => std  => :unique_ratio_std,
+    :exactly_ratio => mean => :exactly_ratio_mean,
+    :exactly_ratio => std  => :exactly_ratio_std,
+    :any_ratio => mean => :any_ratio_mean,
+    :any_ratio => std  => :any_ratio_std,
+    :avg_agents_geq_per_task => mean => :avg_agents_mean,
+    :avg_agents_geq_per_task => std  => :avg_agents_std,
+    :any_exactly_diff => mean => :any_exactly_diff_mean,
+    :any_exactly_diff => std  => :any_exactly_diff_std,
+    :exactly_unique_diff => mean => :exactly_unique_diff_mean,
+    :exactly_unique_diff => std  => :exactly_unique_diff_std,
+    nrow => :n_rows,   # how many samples contributed (often = #runs, if 1 row per run per time)
+    :param_dir => (x -> length(unique(x))) => :n_runs,
+    :t_any_geq_q0_9 => mean => :t_any_geq_q0_9_mean,
+    :t_exactly_one_geq_q0_9 => mean => :t_exactly_one_geq_q0_9_mean,
+    :t_unique_specialist_q0_9 => mean => :t_unique_specialist_q0_9_mean,
+    :t_any_geq_q0_9 => std => :t_any_geq_q0_9_std,
+    :t_exactly_one_geq_q0_9 => std => :t_exactly_one_geq_q0_9_std,
+    :t_unique_specialist_q0_9 => std => :t_unique_specialist_q0_9_std,
+    :t_any_geq_q0_8 => mean => :t_any_geq_q0_8_mean,
+    :t_exactly_one_geq_q0_8 => mean => :t_exactly_one_geq_q0_8_mean,
+    :t_unique_specialist_q0_8 => mean => :t_unique_specialist_q0_8_mean,
+    :t_any_geq_q0_8 => std => :t_any_geq_q0_8_std,
+    :t_exactly_one_geq_q0_8 => std => :t_exactly_one_geq_q0_8_std,
+    :t_unique_specialist_q0_8 => std => :t_unique_specialist_q0_8_std,
+)
+```
+
+```{julia}
+CSV.write("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/agg_steffen_scores_10b10t_heaviside_2026-03-05_2114.csv", agg)
+```
+
+# 10x10 heatmap lr 5e-6
+
+```{julia}
+agg10x10 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/heaviside_heatmap/10b10t5-6lr_analysis/agg_steffen_scores_10b10t_heaviside_2026-02-18.csv", DataFrame)
+```
+
+# 5x5 heatmap lr 5e-6
+
+```{julia}
+agg5x5 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/5b5t/heaviside_sweep/agg_steffen_scores_5b5t_heaviside_2026-02-24.csv", DataFrame)
+```
+
+# 3x3 heatmap lr 5e-6
+
+```{julia}
+agg3x3 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/3b3t/3b3t_heaviside/agg_steffen_scores_3b3t_heaviside_2026-02-23.csv", DataFrame)
+```
+
+# 10x10 ls 100 heatmap lr 5e-6
+
+```{julia}
+agg10x10_ls100 = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/10b10t/lr5-6/ls100/agg_steffen_scores_10b10t_100ls_2026-02-23.csv", DataFrame)
+```
+
+# 5x5 eta sweep lr 5e-6
+
+```{julia}
+agg5x5_eta_sweep = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/eta_sweep/eta_sweep_analysis/agg_steffen_scores_5b5t_eta_sweep_2026-02-08.csv", DataFrame)
+```
+
+# 3x3 eta 10^12 small
+
+```{julia}
+agg3x3_eta_small = CSV.read("/project/theorie/n/N.Pfaffenzeller/results_project/checkpoint/3b3t_ultra_heaviside_small/agg_steffen_scores_3b3t_ultra_heaviside_small_2026-03-02.csv", DataFrame)
+```
+
+```{julia}
+using DataFrames
+using CairoMakie
+
+function grid_from_df(df::DataFrame; x=:interaction_rate, y=:dead_time, z=:exactly_ratio_mean)
+    xs = sort(unique(df[!, x]))
+    ys = sort(unique(df[!, y]))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    Z = fill(NaN, length(xs), length(ys))
+    for r in eachrow(df)
+        Z[x_to_i[r[x]], y_to_j[r[y]]] = r[z]
+    end
+    return xs, ys, Z
+end
+
+function plot_coverage_heatmap_loglog_flipped(df::DataFrame;
+    alpha=:interaction_rate,
+    tau=:dead_time,
+    z=:exactly_ratio_mean,
+    θ::Union{Nothing,Float64}=0.9,
+    labelsize=34,
+    ticksize=30
+)
+
+    df2 = filter(r -> r[alpha] > 0 && r[tau] > 0 && !ismissing(r[z]), df)
+
+    # Build grid in original orientation
+    alphas, taus, Z = grid_from_df(df2; x=alpha, y=tau, z=z)
+    #Z[22,19] = 0.0 # patch missing value for 5x5 heatmap
+
+    fig = Figure(size=(1000, 720))
+    ax = Axis(fig[1,1];
+        xscale=log10,
+        yscale=log10,
+        xlabel="Refractory time, τ",
+        ylabel="Suppression-rate prefactor, α",
+        #xlabel = "Suppression-strength product ατ",
+        #ylabel = "Interaction asymmetry (η)",
+        xlabelsize=labelsize,
+        ylabelsize=labelsize,
+        xticklabelsize=ticksize,
+        yticklabelsize=ticksize,
+        title=""
+    )
+
+    # Flip axes: x = taus, y = alphas
+    hm = heatmap!(ax, taus, alphas, Z')   # NOTE THE TRANSPOSE Z'
+
+    if θ !== nothing
+        contour!(ax, taus, alphas, Z'; levels=[θ], linewidth=3)
+    end
+
+    Colorbar(fig[1,2], hm;
+        label="Coverage fraction, C_{≥θ}(T)/M (θ=0.9)",
+        labelsize=labelsize,
+        ticklabelsize=ticksize
+    )
+
+    fig
+end
+```
+
+# for non-eta 
+
+```{julia}
+z = :exactly_ratio_mean
+z = :exactly_ratio_std
+z = :t_any_geq_q0_9_mean
+#z = :t_any_geq_q0_9_std
+#z = :t_any_geq_q0_8_mean
+#z = :n_rows
+#agg = agg5x5
+
+#fig = plot_coverage_heatmap_loglog_flipped(agg10x10; z=:exactly_ratio_mean, θ=nothing, labelsize=36, ticksize=32)
+fig = plot_coverage_heatmap_loglog_flipped(agg; z=z, θ=nothing, labelsize=36, ticksize=32)
+```
+
+# for eta sweep
+
+```{julia}
+z = :exactly_ratio_mean
+z = :exactly_ratio_std
+agg = agg5x5_eta_sweep
+fig = plot_coverage_heatmap_loglog_flipped(agg; tau=:alphatau, alpha=:lambda_sensitivity, z=z, θ=nothing, labelsize=36, ticksize=32)
+```
+
+```{julia}
+folder_path = "/scratch/n/N.Pfaffenzeller/nikolas_nethive/nethive_multiverse/thesis_plots"
+save_path = joinpath(folder_path, "loglog_heatmaps")
+if !isdir(save_path)
+    mkdir(save_path)
+end
+descriptor = "alpha_tau_$(z)_5x5_eta_loglog_$(Dates.format(Dates.now(), "yyyy-mm-dd_HHMM"))"
+outfile_png = joinpath(save_path, "$descriptor.png")
+outfile_pdf = joinpath(save_path, "$descriptor.pdf")
+save(outfile_png, fig)
+save(outfile_pdf, fig)
+```
+
+
+
+
+
+
+
+
+
+===========================================
+```{julia}
+using DataFrames
+using CairoMakie
+
+function grid_from_df(df::DataFrame; x=:interaction_rate, y=:dead_time, z=:exactly_ratio_mean)
+    xs = sort(unique(df[!, x]))
+    ys = sort(unique(df[!, y]))
+    x_to_i = Dict(v => i for (i,v) in enumerate(xs))
+    y_to_j = Dict(v => j for (j,v) in enumerate(ys))
+
+    Z = fill(NaN, length(xs), length(ys))
+    for r in eachrow(df)
+        Z[x_to_i[r[x]], y_to_j[r[y]]] = r[z]
+    end
+    return xs, ys, Z
+end
+
+function plot_heatmap_loglog(df::DataFrame; x=:interaction_rate, y=:dead_time, z=:exactly_ratio_mean,
+                             title="Mean coverage", outfile=nothing)
+    df2 = filter(r -> r[x] > 0 && r[y] > 0 && !ismissing(r[z]), df)
+
+    xs, ys, Z = grid_from_df(df2; x=x, y=y, z=z)
+
+    labelsize = 28
+    ticklabelsize = 24
+
+    fig = Figure(size=(900,700))
+
+    ax = Axis(fig[1,1];
+        xscale=log10, yscale=log10,
+        #xlabel="Suppression-rate prefactor α",
+        #ylabel="Refractory time τ",
+        #xlabel = L"\alpha \;\;(\mathrm{interaction\ rate})",
+        #ylabel = L"\tau \;\;(\mathrm{dead\ time})",
+        xlabel = L"\text{Suppression-rate prefactor} \;\; \alpha",
+        xlabelsize=labelsize, ylabelsize=labelsize,
+        xticklabelsize=ticklabelsize, yticklabelsize=ticklabelsize,
+        title="", titlesize=labelsize,
+    )
+
+    hm = heatmap!(ax, xs, ys, Z)  # colormap default is fine
+    cb = Colorbar(fig[1,2], hm; label="Coverage  C_{≥θ}(T)/M", labelsize=labelsize, ticklabelsize=ticklabelsize)
+
+    if outfile !== nothing
+        save(outfile, fig)
+    end
+    return fig
+end
+
+```
+```{julia}
+# usage:
+fig = plot_heatmap_loglog(agg10x10; z=:exactly_ratio_mean, outfile="alpha_tau_exactly_mean_10x10.png")
+```
+
+
+```{julia}
+df_last
+count(ismissing, df_last.t_any_geq_q0_9)
